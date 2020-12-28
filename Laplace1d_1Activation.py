@@ -65,7 +65,7 @@ def dictionary_out2file(R_dic, log_fileout):
         DNN_tools.log_string('The penalty of boundary will keep unchanged with training going on.\n', log_fileout)
 
 
-def solve_laplace(R):
+def solve_Multiscale_PDE(R):
     log_out_path = R['FolderName']        # 将路径从字典 R 中提取出来
     if not os.path.exists(log_out_path):  # 判断路径是否已经存在
         os.mkdir(log_out_path)            # 无 log_out_path 路径，创建一个 log_out_path 路径
@@ -136,10 +136,13 @@ def solve_laplace(R):
     # 初始化权重和和偏置的模式
     if R['weight_biases_model'] == 'general_model':
         flag1 = 'WB'
-        # Weights, Biases = PDE_DNN_base.Initial_DNN2different_hidden(input_dim, out_dim, hidden_layers, flag)
-        # Weights, Biases = laplace_DNN1d_base.initialize_NN_xavier(input_dim, out_dim, hidden_layers, flag1)
-        # Weights, Biases = laplace_DNN1d_base.initialize_NN_random_normal(input_dim, out_dim, hidden_layers, flag1)
-        Weights, Biases = DNN_base.initialize_NN_random_normal2(input_dim, out_dim, hidden_layers, flag1)
+        if R['model'] == 'PDE_DNN_Cos_C_Sin_Base':
+            Weights, Biases = DNN_base.initialize_NN_random_normal2_CS(input_dim, out_dim, hidden_layers, flag1)
+        else:
+            # Weights, Biases = PDE_DNN_base.Initial_DNN2different_hidden(input_dim, out_dim, hidden_layers, flag)
+            # Weights, Biases = laplace_DNN1d_base.initialize_NN_xavier(input_dim, out_dim, hidden_layers, flag1)
+            # Weights, Biases = laplace_DNN1d_base.initialize_NN_random_normal(input_dim, out_dim, hidden_layers, flag1)
+            Weights, Biases = DNN_base.initialize_NN_random_normal2(input_dim, out_dim, hidden_layers, flag1)
     elif R['weight_biases_model'] == 'phase_shift_model':  # phase_shift 这个还需要研究，先放在这里
         flag0X = 'X_WB0'
         Weights0_X, Biases0_X = CPDNN_base.Initial_DNN(input_dim, out_dim, hidden_layers, flag0X)
@@ -221,6 +224,11 @@ def solve_laplace(R):
                 U_NN = DNN_base.PDE_DNN_FourierBase(X_it, Weights, Biases, hidden_layers, freq, activate_name=act_func)
                 ULeft_NN = DNN_base.PDE_DNN_FourierBase(X_left_bd, Weights, Biases, hidden_layers, freq, activate_name=act_func)
                 URight_NN = DNN_base.PDE_DNN_FourierBase(X_right_bd, Weights, Biases, hidden_layers, freq, activate_name=act_func)
+            elif R['model'] == 'PDE_DNN_Cos_C_Sin_Base':
+                freq = R['freqs']
+                U_NN = DNN_base.PDE_DNN_Cos_C_Sin_Base(X_it, Weights, Biases, hidden_layers, freq, activate_name=act_func)
+                ULeft_NN = DNN_base.PDE_DNN_Cos_C_Sin_Base(X_left_bd, Weights, Biases, hidden_layers, freq, activate_name=act_func)
+                URight_NN = DNN_base.PDE_DNN_Cos_C_Sin_Base(X_right_bd, Weights, Biases, hidden_layers, freq, activate_name=act_func)
             elif R['model'] == 'PDE_DNN_WaveletBase':
                 freq = R['freqs']
                 U_NN = DNN_base.PDE_DNN_WaveletBase(X_it, Weights, Biases, hidden_layers, freq, activate_name=act_func)
@@ -487,28 +495,48 @@ if __name__ == "__main__":
     # 网络的频率范围设置
     R['freqs'] = np.concatenate(([1], np.arange(1, 100 - 1)), axis=0)
 
-    # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    # R['hidden_layers'] = (100, 80, 80, 60, 60, 40)
-    # R['hidden_layers'] = (100, 80, 60, 60, 40, 40, 20)
-    R['hidden_layers'] = (120, 120, 100, 100, 60)           # 1*120+120*120+120*100+100*100+100*60+60*1= 42580 个参数
-    # R['hidden_layers'] = (300, 200, 150, 150, 100, 50, 50)
-    # R['hidden_layers'] = (400, 300, 300, 200, 100, 100, 50)
-    # R['hidden_layers'] = (500, 400, 300, 300, 200, 100)
-    # R['hidden_layers'] = (500, 400, 300, 200, 200, 100)
-    # R['hidden_layers'] = (500, 400, 300, 300, 200, 100, 100)
-    # R['hidden_layers'] = (500, 300, 200, 200, 100, 100, 50)
-    # R['hidden_layers'] = (1000, 800, 600, 400, 200)
-    # R['hidden_layers'] = (1000, 500, 400, 300, 300, 200, 100, 100)
-    # R['hidden_layers'] = (2000, 1500, 1000, 500, 250)
-
     # &&&&&&&&&&&&&&&&&&& 使用的网络模型 &&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['model'] = 'PDE_DNN'
     # R['model'] = 'PDE_DNN_BN'
     # R['model'] = 'PDE_DNN_scale'
     # R['model'] = 'PDE_DNN_adapt_scale'
-    R['model'] = 'PDE_DNN_FourierBase'
+    # R['model'] = 'PDE_DNN_FourierBase'
+    R['model'] = 'PDE_DNN_Cos_C_Sin_Base'
     # R['model'] = 'PDE_DNN_WaveletBase'
     # R['model'] = 'PDE_CPDNN'
+
+    # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
+    # R['hidden_layers'] = (100, 80, 80, 60, 60, 40)
+    if R['model'] == 'PDE_DNN_Cos_C_Sin_Base':
+        if R['order2laplace'] == 2:
+            R['hidden_layers'] = (60, 120, 100, 100, 60)  # 1*120+120*120+120*100+100*100+100*60+60*1= 42580 个参数
+        elif R['order2laplace'] == 5:
+            R['hidden_layers'] = (75, 150, 100, 100, 60)  # 1*150+150*150+150*100+100*100+100*60+60*1= 53710 个参数
+        elif R['order2laplace'] == 8:
+            if R['epsilon'] == 0.1:
+                R['hidden_layers'] = (100, 200, 100, 100, 80)  # 1*200+200*200+200*100+100*100+100*60+60*1= 42580 个参数
+            else:
+                R['hidden_layers'] = (125, 200, 100, 100, 80)  # 1*200+200*200+200*100+100*100+100*60+60*1= 42580 个参数
+    else:
+        if R['order2laplace'] == 2:
+            R['hidden_layers'] = (120, 120, 100, 100, 60)  # 1*120+120*120+120*100+100*100+100*60+60*1= 42580 个参数
+        elif R['order2laplace'] == 5:
+            R['hidden_layers'] = (150, 150, 100, 100, 60)  # 1*150+150*150+150*100+100*100+100*60+60*1= 53710 个参数
+        elif R['order2laplace'] == 8:
+            if R['epsilon'] == 0.1:
+                R['hidden_layers'] = (200, 200, 100, 100, 80)  # 1*200+200*200+200*100+100*100+100*60+60*1= 42580 个参数
+            else:
+                R['hidden_layers'] = (250, 200, 100, 100, 80)  # 1*200+200*200+200*100+100*100+100*60+60*1= 42580 个参数
+        else:
+            R['hidden_layers'] = (300, 200, 150, 150, 100, 50, 50)
+            # R['hidden_layers'] = (400, 300, 300, 200, 100, 100, 50)
+            # R['hidden_layers'] = (500, 400, 300, 300, 200, 100)
+            # R['hidden_layers'] = (500, 400, 300, 200, 200, 100)
+            # R['hidden_layers'] = (500, 400, 300, 300, 200, 100, 100)
+            # R['hidden_layers'] = (500, 300, 200, 200, 100, 100, 50)
+            # R['hidden_layers'] = (1000, 800, 600, 400, 200)
+            # R['hidden_layers'] = (1000, 500, 400, 300, 300, 200, 100, 100)
+            # R['hidden_layers'] = (2000, 1500, 1000, 500, 250)
 
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['activate_func'] = 'relu'
@@ -529,5 +557,5 @@ if __name__ == "__main__":
     # R['activate_func'] = 'selu'
     # R['activate_func'] = 'phi'
 
-    solve_laplace(R)
+    solve_Multiscale_PDE(R)
 
