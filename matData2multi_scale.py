@@ -23,6 +23,8 @@ def get_data2multi_scale(equation_name=None, mesh_number=2):
         test_meshXY_file = 'data2Matlab/E4/' + str('meshXY') + str(mesh_number) + str('.mat')
     elif equation_name == 'multi_scale2D_5':
         test_meshXY_file = 'data2Matlab/E5/' + str('meshXY') + str(mesh_number) + str('.mat')
+    elif equation_name == 'multi_scale2D_6':
+        test_meshXY_file = 'data2Matlab/E6/' + str('meshXY') + str(mesh_number) + str('.mat')
     mesh_XY = loadMatlabIdata(test_meshXY_file)
     XY = mesh_XY['meshXY']
     test_xy_data = np.transpose(XY, (1, 0))

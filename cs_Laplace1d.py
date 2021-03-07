@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 import platform
 import shutil
-import Fourier2d_1Act
+import Fourier1d_1Act
 
 R={}
 # -------------------------------------- CPU or GPU 选择 -----------------------------------------------
@@ -202,4 +202,4 @@ R['variational_loss'] = 1                 # PDE变分 1: grad U = grad Uc + grad
 R['hot_power'] = 1
 R['freqs'] = np.arange(11, 61)
 R['wavelet'] = 1                          # 0:: L2 wavelet+energy 1: wavelet 2:energy
-Fourier2d_1Act.solve_Multiscale_PDE(R)
+Fourier1d_1Act.solve_Multiscale_PDE(R)

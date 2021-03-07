@@ -5,7 +5,7 @@ import numpy as np
 import matplotlib
 import platform
 import shutil
-import Laplace5d_1Activation
+import Fourier5d_1Act
 
 R={}
 # -------------------------------------- CPU or GPU 选择 -----------------------------------------------
@@ -159,4 +159,4 @@ R['activate_func'] = 's2relu'
 # R['activate_func'] = 'phi'
 # R['activate_func'] = 'sin_modify_mexican'
 
-Laplace5d_1Activation.solve_laplace(R)
+Fourier5d_1Act.solve_Multiscale_PDE(R)
