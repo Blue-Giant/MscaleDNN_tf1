@@ -1,7 +1,7 @@
 # The codes for MscaleDNN 
-This codes are implemented on tensorflow 1.14.0 and python 3.6 or 3.7. Additionally, if the codes are runned on Server, one should use the miniconda for python 3.7 or 3.6. However, if you dowmload the latest version of miniconda from https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh, it is based on python 3.8.  You should turn to the https://docs.conda.io/en/latest/miniconda.html, then download the python3.7 version.
+The codes are implemented in tensorflow--1.14 or 1.15 under the interpreter python3.6 or python3.7.  Additionally, if the codes are runned on a Server, one should use the miniconda for python 3.7 or 3.6. However, if you dowmload the latest version of miniconda from https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh, it is based on python 3.8.  You should turn to the https://docs.conda.io/en/latest/miniconda.html, then download the python3.7 version.
 
-# This repository is aimed at the following paper:
+# Corresponding Papers
 
 ## A multi-scale DNN algorithm for nonlinear elliptic equations with multiple scales  
 created by Xi-An Li, Zhi-Qin John, Xu and Lei Zhang
