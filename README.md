@@ -1,3 +1,5 @@
+We have also submitted the new codes for solving multi-scale PDEs on Tensorflow 2.X, one can redirect to https://github.com/Blue-Giant/MscaleDNN-tf2
+
 # Ideas
 This work is used to solve a class of multi-scale pde problems by means of the technique of DNN with the idea of fourier basis.
 
