@@ -85,6 +85,12 @@ def save_train_MSE_REL2mat(Mse_data, Rel_data, actName=None, outPath=None):
     scio.savemat(outFile2data, {key2mat_1: Mse_data, key2mat_2: Rel_data})
 
 
+def save_meshData2mat(data, dataName=None, mesh_number=4, outPath=None):
+    outFile2data = '%s/%s%s.mat' % (outPath, dataName, mesh_number)
+    key2mat = 'U%s' % (str.upper(dataName))
+    scio.savemat(outFile2data, {key2mat: data})
+
+
 # 一个mat文件保存一种数据
 def save_testData_or_solus2mat(data, dataName=None, outPath=None):
     if str.lower(dataName) == 'testxy':
