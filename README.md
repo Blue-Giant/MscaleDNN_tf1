@@ -1,4 +1,4 @@
-# The codes for MscaleDNN 
+# Requirement for MscaleDNN 
 The codes are implemented in tensorflow--1.14 or 1.15 under the interpreter python3.6 or python3.7.  Additionally, if the codes are runned on a Server, one should use the miniconda for python 3.7 or 3.6. However, if you dowmload the latest version of miniconda from https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh, it is based on python 3.8.  You should turn to the https://docs.conda.io/en/latest/miniconda.html, then download the python3.7 version.
 
 We have also submitted the new codes for solving multi-scale PDEs on Tensorflow 2.X, one can redirect to https://github.com/Blue-Giant/MscaleDNN-tf2
