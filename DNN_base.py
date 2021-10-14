@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-Created on 2021.06.17
 @author: xi'an Li
+Created on 2020.05.31
+Modified on 2020.06.17
+Modified and formed the final version on 2021.10.15
 """
 import tensorflow as tf
 import numpy as np
@@ -508,7 +510,7 @@ def regular_weights_biases_L2(weights, biases):
 
 
 #  --------------------------------------------  网络模型 ------------------------------------------------------
-def DNN(variable_input, Weights, Biases, hiddens, activateIn_name=None, activate_name=None, activateOut_name='linear'):
+def DNN(variable_input, Weights, Biases, hiddens, activateIn_name='tanh', activate_name='tanh', activateOut_name='linear'):
     """
     Args:
         variable_input: the input data, dim：NxD
@@ -612,7 +614,7 @@ def DNN(variable_input, Weights, Biases, hiddens, activateIn_name=None, activate
     return output
 
 
-def DNN_scale(variable_input, Weights, Biases, hiddens, freq_frag, activateIn_name=None, activate_name=None,
+def DNN_scale(variable_input, Weights, Biases, hiddens, freq_frag, activateIn_name='tanh', activate_name='tanh',
               activateOut_name='linear', repeat_Highfreq=True):
     """
     Args:
@@ -741,7 +743,7 @@ def DNN_scale(variable_input, Weights, Biases, hiddens, freq_frag, activateIn_na
     return output
 
 
-def subDNNs_scale(variable_input, Wlists, Blists, hiddens, freq_frag, activateIn_name=None, activate_name=None,
+def subDNNs_scale(variable_input, Wlists, Blists, hiddens, freq_frag, activateIn_name='tanh', activate_name='tanh',
                   activateOut_name='linear', repeat_Highfreq=True):
     """
     Args:
@@ -889,7 +891,7 @@ def subDNNs_scale(variable_input, Wlists, Blists, hiddens, freq_frag, activateIn
     return out
 
 
-def DNN_adapt_scale(variable_input, Weights, Biases, hiddens, freq_frag, activateIn_name=None, activate_name=None,
+def DNN_adapt_scale(variable_input, Weights, Biases, hiddens, freq_frag, activateIn_name='tanh', activate_name='tanh',
                     activateOut_name='linear', repeat_Highfreq=True):
     """
     Args:
@@ -1022,7 +1024,7 @@ def DNN_adapt_scale(variable_input, Weights, Biases, hiddens, freq_frag, activat
     return output
 
 
-def subDNNs_adapt_scale(variable_input, Wlists, Blists, hiddens, freq_frag, activateIn_name=None, activate_name=None,
+def subDNNs_adapt_scale(variable_input, Wlists, Blists, hiddens, freq_frag, activateIn_name='tanh', activate_name='tanh',
                         activateOut_name='linear', repeat_Highfreq=True):
     """
     Args:
@@ -1165,7 +1167,7 @@ def subDNNs_adapt_scale(variable_input, Wlists, Blists, hiddens, freq_frag, acti
     return out
 
 
-def DNN_SinAddCos(variable_input, Weights, Biases, hiddens, freq_frag, activate_name=None, activateOut_name='linear',
+def DNN_SinAddCos(variable_input, Weights, Biases, hiddens, freq_frag, activate_name='tanh', activateOut_name='linear',
                   repeat_Highfreq=True):
     """
     Args:
@@ -1274,7 +1276,7 @@ def DNN_SinAddCos(variable_input, Weights, Biases, hiddens, freq_frag, activate_
     return output
 
 
-def subDNNs_SinAddCos(variable_input, Wlists, Blists, hiddens, freq_frag, activate_name=None, activateOut_name='linear',
+def subDNNs_SinAddCos(variable_input, Wlists, Blists, hiddens, freq_frag, activate_name='tanh', activateOut_name='linear',
                       repeat_Highfreq=True):
     """
     Args:
@@ -1393,7 +1395,7 @@ def subDNNs_SinAddCos(variable_input, Wlists, Blists, hiddens, freq_frag, activa
     return out
 
 
-def DNN_Sine0rCos_Base(variable_input, Weights, Biases, hiddens, freq_frag, activate_name=None, activateOut_name='linear',
+def DNN_Sine0rCos_Base(variable_input, Weights, Biases, hiddens, freq_frag, activate_name='tanh', activateOut_name='linear',
                        repeat_Highfreq=True):
     """
     Args:
@@ -1505,7 +1507,7 @@ def DNN_Sine0rCos_Base(variable_input, Weights, Biases, hiddens, freq_frag, acti
 
 
 # FourierBase 代表 cos concatenate sin according to row（i.e. the number of sampling points）
-def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activate_name=None, activateOut_name='linear',
+def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activate_name='tanh', activateOut_name='linear',
                     repeat_Highfreq=True, sFourier=0.5):
     """
     Args:
@@ -1626,7 +1628,7 @@ def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activat
     return output
 
 
-def DNN_WaveletBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_name=None, activateOut_name='linear',
+def DNN_WaveletBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_name='tanh', activateOut_name='linear',
                     repeat_Highfreq=True, sWavelet=0.5):
     """
     Args:
