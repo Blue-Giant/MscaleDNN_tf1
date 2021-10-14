@@ -265,8 +265,9 @@ def get_infos2Boltzmann_3D(input_dim=1, out_dim=1, mesh_number=2, intervalL=0.0,
         return A_eps, kappa, fside, utrue, u_00, u_01, u_10, u_11, u_20, u_21
     elif equa_name == 'Boltzmann7':
         fside = lambda x, y, z: tf.ones_like(x)
-        utrue = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
-        A_eps = lambda x, y, z: 0.25 * (2.0 + tf.cos(np.pi*x) * tf.cos(np.pi*y) * tf.cos(np.pi*z) + tf.cos(20.0*np.pi*x) * tf.cos(20.0*np.pi*y) * tf.cos(20.0*np.pi*z))
+        u_true = lambda x, y, z: tf.sin(np.pi * x) * tf.sin(np.pi * y) * tf.sin(np.pi * z) + 0.01 * tf.sin(
+            10 * np.pi * x) * tf.sin(20 * np.pi * y) * tf.sin(50 * np.pi * z)
+        A_eps = lambda x, y, z: 0.25 * (2.0 + tf.cos(10.0*np.pi*x) * tf.cos(25.0*np.pi*y) * tf.cos(50.0*np.pi*z))
         kappa = lambda x, y, z: tf.ones_like(x)*(np.pi)*(np.pi)
         u_00 = lambda x, y, z: tf.sin(np.pi*intervalL)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
         u_01 = lambda x, y, z: tf.sin(np.pi*intervalR)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
@@ -274,7 +275,7 @@ def get_infos2Boltzmann_3D(input_dim=1, out_dim=1, mesh_number=2, intervalL=0.0,
         u_11 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*intervalR)*tf.sin(np.pi*z)
         u_20 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalL)
         u_21 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalR)
-        return A_eps, kappa, fside, utrue, u_00, u_01, u_10, u_11, u_20, u_21
+        return A_eps, kappa, fside, u_true, u_00, u_01, u_10, u_11, u_20, u_21
 
 
 def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
@@ -364,12 +365,8 @@ def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
         return fside
     elif equa_name == 'Boltzmann7':
         utrue = tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)+\
-                0.05*tf.sin(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*z) + \
-                0.01*tf.sin(50*np.pi*x)*tf.sin(50*np.pi*y)*tf.sin(50*np.pi*z)
-        Aeps = 0.25*(3.0+tf.cos(np.pi*x)*tf.cos(np.pi*y)*tf.cos(np.pi*z)+
-                     tf.cos(20.0*np.pi*x)*tf.cos(20.0*np.pi*y)*tf.cos(20.0*np.pi*z)+
-                     tf.cos(50.0*np.pi*x)*tf.cos(50.0*np.pi*y)*tf.cos(50.0*np.pi*z))
-
+                0.01*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(50*np.pi*z)
+        Aeps = 0.25 * (2.0 + tf.cos(10.0*np.pi*x) * tf.cos(20.0*np.pi*y) * tf.cos(50.0*np.pi*z))
         ux = np.pi*tf.cos(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)+\
              1.0*np.pi*tf.cos(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*z) + \
              0.5*np.pi*tf.cos(50*np.pi*x)*tf.sin(50*np.pi*y)*tf.sin(50*np.pi*z)

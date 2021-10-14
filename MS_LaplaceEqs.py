@@ -1,6 +1,6 @@
 import tensorflow as tf
 import numpy as np
-import matData2Laplacian
+import matData2pLaplace
 
 
 # 这里注意一下: 对于 np.ones_like(x), x要是一个有实际意义的树或数组或矩阵才可以。不可以是 tensorflow 占位符
@@ -11,9 +11,8 @@ import matData2Laplacian
 def get_infos2pLaplace_1D(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps=0.01, equa_name=None):
     aeps = lambda x: 1.0 / (2 + tf.cos(2 * np.pi * x / eps))
 
-    utrue = lambda x: x - tf.square(x) + eps * (
-            1 / np.pi * tf.sin(np.pi * 2 * x / eps) * (1 / 4 - x / 2) - eps / (4 * np.pi ** 2) * tf.cos(
-        np.pi * 2 * x / eps) + eps / 4 / np.pi ** 2)
+    utrue = lambda x: x - x*x + eps*(1/np.pi*tf.sin(np.pi*2*x/eps)*(1/4-x/2)-eps/(4*np.pi**2)*
+                                     tf.cos(np.pi*2*x/eps)+eps/(4*np.pi ** 2))
 
     u_l = lambda x: tf.zeros_like(x)
 
@@ -65,7 +64,8 @@ def get_infos2pLaplace_1D_2(in_dim=None, out_dim=None, intervalL=0, intervalR=1,
     return utrue, f, aeps, u_l, u_r
 
 
-def get_infos2pLaplace_1D_3(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.02, eps2=0.01, equa_name=None):
+def get_infos2pLaplace_1D_3scale(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.02, eps2=0.01,
+                                 equa_name=None):
     aeps = lambda x: 1.0/((2 + tf.cos(2 * np.pi * x / eps1)) * (2 + tf.cos(2 * np.pi * x / eps2)))
 
     utrue = lambda x: x - tf.square(x) + (eps1/(4*np.pi))*tf.sin(2*np.pi*x/eps1) + (eps2/(4*np.pi))*tf.sin(2*np.pi*x/eps2)
@@ -141,7 +141,7 @@ def force_sice_3scale3(x, eps1=0.02, eps2=0.01):
 
 #  例一
 def true_solution2E1(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue
@@ -171,7 +171,7 @@ def elliptic_coef2E1(input_dim=None, output_dim=None):
 
 #  例二
 def true_solution2E2(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue
@@ -201,7 +201,7 @@ def elliptic_coef2E2(input_dim=None, output_dim=None):
 
 # 例三
 def true_solution2E3(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue
@@ -241,7 +241,7 @@ def elliptic_coef2E3(input_dim=None, output_dim=None):
 
 # 例四
 def true_solution2E4(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue
@@ -303,7 +303,7 @@ def elliptic_coef2E4(input_dim=None, output_dim=None, mesh_num=2):
 
 # 例五
 def true_solution2E5(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue
@@ -343,7 +343,7 @@ def elliptic_coef2E5(input_dim=None, output_dim=None):
 
 # 例六
 def true_solution2E6(input_dim=None, output_dim=None, q=2, file_name=None):
-    mat_true = matData2Laplacian.loadMatlabIdata(file_name)
+    mat_true = matData2pLaplace.loadMatlabIdata(file_name)
     true_key = 'u_true'
     utrue = mat_true[true_key]
     return utrue

@@ -29,7 +29,7 @@ def solve_Multiscale_PDE(R):
     log_out_path = R['FolderName']        # 将路径从字典 R 中提取出来
     if not os.path.exists(log_out_path):  # 判断路径是否已经存在
         os.mkdir(log_out_path)            # 无 log_out_path 路径，创建一个 log_out_path 路径
-    logfile_name = '%s%s.txt' % ('log2', R['activate_func'])
+    logfile_name = '%s%s.txt' % ('log2', R['name2act_hidden'])
     log_fileout = open(os.path.join(log_out_path, logfile_name), 'w')  # 在这个路径下创建并打开一个可写的 log_train.txt文件
     DNN_Log_Print.dictionary_out2file(R, log_fileout)
 
@@ -42,7 +42,9 @@ def solve_Multiscale_PDE(R):
     lr_decay = R['learning_rate_decay']
     learning_rate = R['learning_rate']
     hidden_layers = R['hidden_layers']
-    act_func = R['activate_func']
+    actIn_func = R['name2act_in']
+    act_func = R['name2act_hidden']
+    actOut_func = R['name2act_out']
 
     input_dim = R['input_dim']
     out_dim = R['output_dim']
@@ -73,77 +75,94 @@ def solve_Multiscale_PDE(R):
             equa_name=R['equa_name'])
 
     flag = 'WB2NN'
-    if R['model'] == 'DNN_FourierBase':
+    if R['model2NN'] == 'DNN_FourierBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag)
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag)
 
-    global_steps = tf.Variable(0, trainable=False)
+    global_steps = tf.compat.v1.Variable(0, trainable=False)
     with tf.device('/gpu:%s' % (R['gpuNo'])):
-        with tf.variable_scope('vscope', reuse=tf.AUTO_REUSE):
-            XYZ_it = tf.placeholder(tf.float32, name='XYZ_it', shape=[None, input_dim])
-            XYZ_bottom_bd = tf.placeholder(tf.float32, name='bottom_bd', shape=[None, input_dim])
-            XYZ_top_bd = tf.placeholder(tf.float32, name='top_bd', shape=[None, input_dim])
-            XYZ_left_bd = tf.placeholder(tf.float32, name='left_bd', shape=[None, input_dim])
-            XYZ_right_bd = tf.placeholder(tf.float32, name='right_bd', shape=[None, input_dim])
-            XYZ_front_bd = tf.placeholder(tf.float32, name='front_bd', shape=[None, input_dim])
-            XYZ_behind_bd = tf.placeholder(tf.float32, name='behind_bd', shape=[None, input_dim])
-            boundary_penalty = tf.placeholder_with_default(input=1e3, shape=[], name='bd_p')
-            in_learning_rate = tf.placeholder_with_default(input=1e-5, shape=[], name='lr')
-            train_opt = tf.placeholder_with_default(input=True, shape=[], name='train_opt')
+        with tf.compat.v1.variable_scope('vscope', reuse=tf.AUTO_REUSE):
+            XYZ_it = tf.compat.v1.placeholder(tf.float32, name='XYZ_it', shape=[None, input_dim])
+            XYZ_bottom_bd = tf.compat.v1.placeholder(tf.float32, name='bottom_bd', shape=[None, input_dim])
+            XYZ_top_bd = tf.compat.v1.placeholder(tf.float32, name='top_bd', shape=[None, input_dim])
+            XYZ_left_bd = tf.compat.v1.placeholder(tf.float32, name='left_bd', shape=[None, input_dim])
+            XYZ_right_bd = tf.compat.v1.placeholder(tf.float32, name='right_bd', shape=[None, input_dim])
+            XYZ_front_bd = tf.compat.v1.placeholder(tf.float32, name='front_bd', shape=[None, input_dim])
+            XYZ_behind_bd = tf.compat.v1.placeholder(tf.float32, name='behind_bd', shape=[None, input_dim])
+            boundary_penalty = tf.compat.v1.placeholder_with_default(input=1e3, shape=[], name='bd_p')
+            in_learning_rate = tf.compat.v1.placeholder_with_default(input=1e-5, shape=[], name='lr')
 
             # 供选择的网络模式
-            if R['model'] == 'DNN':
-                UNN = DNN_base.DNN(XYZ_it, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                ULeft_NN = DNN_base.DNN(XYZ_left_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                URight_NN = DNN_base.DNN(XYZ_right_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                UBottom_NN = DNN_base.DNN(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                UTop_NN = DNN_base.DNN(XYZ_top_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                UFront_NN = DNN_base.DNN(XYZ_front_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-                UBehind_NN = DNN_base.DNN(XYZ_behind_bd, W2NN, B2NN, hidden_layers, activate_name=act_func)
-            elif R['model'] == 'DNN_scale':
-                freqs = R['freqs']
-                UNN = DNN_base.DNN_scale(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                ULeft_NN = DNN_base.DNN_scale(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                URight_NN = DNN_base.DNN_scale(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBottom_NN = DNN_base.DNN_scale(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UTop_NN = DNN_base.DNN_scale(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UFront_NN = DNN_base.DNN_scale(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBehind_NN = DNN_base.DNN_scale(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-            elif R['model'] == 'DNN_adapt_scale':
-                freqs = R['freqs']
-                UNN = DNN_base.DNN_adapt_scale(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                ULeft_NN = DNN_base.DNN_adapt_scale(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                URight_NN = DNN_base.DNN_adapt_scale(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBottom_NN = DNN_base.DNN_adapt_scale(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UTop_NN = DNN_base.DNN_adapt_scale(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UFront_NN = DNN_base.DNN_adapt_scale(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBehind_NN = DNN_base.DNN_adapt_scale(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-            elif R['model'] == 'DNN_FourierBase':
-                freqs = R['freqs']
-                UNN = DNN_base.DNN_FourierBase(XYZ_it, W2NN, B2NN, hidden_layers, freqs,
-                                               activate_name=act_func, sFourier=R['sfourier'])
+            if R['model2NN'] == 'DNN':
+                UNN = DNN_base.DNN(XYZ_it, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                   activate_name=act_func, activateOut_name=actOut_func)
+                ULeft_NN = DNN_base.DNN(XYZ_left_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                        activate_name=act_func, activateOut_name=actOut_func)
+                URight_NN = DNN_base.DNN(XYZ_right_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                         activate_name=act_func, activateOut_name=actOut_func)
+                UBottom_NN = DNN_base.DNN(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                          activate_name=act_func, activateOut_name=actOut_func)
+                UTop_NN = DNN_base.DNN(XYZ_top_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                       activate_name=act_func, activateOut_name=actOut_func)
+                UFront_NN = DNN_base.DNN(XYZ_front_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                         activate_name=act_func, activateOut_name=actOut_func)
+                UBehind_NN = DNN_base.DNN(XYZ_behind_bd, W2NN, B2NN, hidden_layers, activateIn_name=actIn_func,
+                                          activate_name=act_func, activateOut_name=actOut_func)
+            elif R['model2NN'] == 'DNN_scale':
+                freqs = R['freq']
+                UNN = DNN_base.DNN_scale(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                         activate_name=act_func, activateOut_name=actOut_func)
+                ULeft_NN = DNN_base.DNN_scale(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                              activate_name=act_func, activateOut_name=actOut_func)
+                URight_NN = DNN_base.DNN_scale(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                               activate_name=act_func, activateOut_name=actOut_func)
+                UBottom_NN = DNN_base.DNN_scale(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                activate_name=act_func, activateOut_name=actOut_func)
+                UTop_NN = DNN_base.DNN_scale(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                             activate_name=act_func, activateOut_name=actOut_func)
+                UFront_NN = DNN_base.DNN_scale(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                               activate_name=act_func, activateOut_name=actOut_func)
+                UBehind_NN = DNN_base.DNN_scale(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                activate_name=act_func, activateOut_name=actOut_func)
+            elif R['model2NN'] == 'DNN_adapt_scale':
+                freqs = R['freq']
+                UNN = DNN_base.DNN_adapt_scale(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                               activate_name=act_func, activateOut_name=actOut_func)
+                ULeft_NN = DNN_base.DNN_adapt_scale(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                    activate_name=act_func, activateOut_name=actOut_func)
+                URight_NN = DNN_base.DNN_adapt_scale(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                     activate_name=act_func, activateOut_name=actOut_func)
+                UBottom_NN = DNN_base.DNN_adapt_scale(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                      activate_name=act_func, activateOut_name=actOut_func)
+                UTop_NN = DNN_base.DNN_adapt_scale(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                   activate_name=act_func, activateOut_name=actOut_func)
+                UFront_NN = DNN_base.DNN_adapt_scale(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                     activate_name=act_func, activateOut_name=actOut_func)
+                UBehind_NN = DNN_base.DNN_adapt_scale(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs, activateIn_name=actIn_func,
+                                                      activate_name=act_func, activateOut_name=actOut_func)
+            elif R['model2NN'] == 'DNN_FourierBase':
+                freqs = R['freq']
+                UNN = DNN_base.DNN_FourierBase(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                               activateOut_name=actOut_func, sFourier=R['sfourier'])
                 ULeft_NN = DNN_base.DNN_FourierBase(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                    activate_name=act_func, sFourier=R['sfourier'])
+                                                    activate_name=act_func, activateOut_name=actOut_func,
+                                                    sFourier=R['sfourier'])
                 URight_NN = DNN_base.DNN_FourierBase(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                     activate_name=act_func, sFourier=R['sfourier'])
+                                                     activate_name=act_func, activateOut_name=actOut_func,
+                                                     sFourier=R['sfourier'])
                 UBottom_NN = DNN_base.DNN_FourierBase(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                      activate_name=act_func, sFourier=R['sfourier'])
+                                                      activate_name=act_func, activateOut_name=actOut_func,
+                                                      sFourier=R['sfourier'])
                 UTop_NN = DNN_base.DNN_FourierBase(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                   activate_name=act_func, sFourier=R['sfourier'])
+                                                   activate_name=act_func, activateOut_name=actOut_func,
+                                                   sFourier=R['sfourier'])
                 UFront_NN = DNN_base.DNN_FourierBase(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                     activate_name=act_func, sFourier=R['sfourier'])
+                                                     activate_name=act_func, activateOut_name=actOut_func,
+                                                     sFourier=R['sfourier'])
                 UBehind_NN = DNN_base.DNN_FourierBase(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                      activate_name=act_func, sFourier=R['sfourier'])
-            elif R['model'] == 'DNN_Sin+Cos_Base':
-                freqs = R['freqs']
-                UNN = DNN_base.DNN_SinAddCos(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                ULeft_NN = DNN_base.DNN_SinAddCos(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                URight_NN = DNN_base.DNN_SinAddCos(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBottom_NN = DNN_base.DNN_SinAddCos(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UTop_NN = DNN_base.DNN_SinAddCos(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UFront_NN = DNN_base.DNN_SinAddCos(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
-                UBehind_NN = DNN_base.DNN_SinAddCos(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func)
+                                                      activate_name=act_func, activateOut_name=actOut_func,
+                                                      sFourier=R['sfourier'])
 
             X_it = tf.reshape(XYZ_it[:, 0], shape=[-1, 1])
             Y_it = tf.reshape(XYZ_it[:, 1], shape=[-1, 1])
@@ -252,14 +271,13 @@ def solve_Multiscale_PDE(R):
         saveData.save_testData_or_solus2mat(test_xyz_bach, dataName='testXYZ', outPath=R['FolderName'])
 
     # ConfigProto 加上allow_soft_placement=True就可以使用 gpu 了
-    config = tf.ConfigProto(allow_soft_placement=True)  # 创建sess的时候对sess进行参数配置
+    config = tf.compat.v1.ConfigProto(allow_soft_placement=True)  # 创建sess的时候对sess进行参数配置
     config.gpu_options.allow_growth = True              # True是让TensorFlow在运行过程中动态申请显存，避免过多的显存占用。
     config.allow_soft_placement = True                  # 当指定的设备不存在时，允许选择一个存在的设备运行。比如gpu不存在，自动降到cpu上运行
-    with tf.Session(config=config) as sess:
+    with tf.compat.v1.Session(config=config) as sess:
         sess.run(tf.global_variables_initializer())
         tmp_lr = learning_rate
 
-        train_option = True
         for i_epoch in range(R['max_epoch'] + 1):
             xyz_it_batch = DNN_data.rand_it(batchsize_it, input_dim, region_a=region_lb, region_b=region_rt)
             xyz_bottom_batch, xyz_top_batch, xyz_left_batch, xyz_right_batch, xyz_front_batch, xyz_behind_batch = \
@@ -278,19 +296,6 @@ def solve_Multiscale_PDE(R):
                     temp_penalty_bd = 200 * bd_penalty_init
                 else:
                     temp_penalty_bd = 500 * bd_penalty_init
-            elif R['activate_penalty2bd_increase'] == 2:
-                if i_epoch < int(R['max_epoch'] / 10):
-                    temp_penalty_bd = 5*bd_penalty_init
-                elif i_epoch < int(R['max_epoch'] / 5):
-                    temp_penalty_bd = 1 * bd_penalty_init
-                elif i_epoch < int(R['max_epoch'] / 4):
-                    temp_penalty_bd = 0.5 * bd_penalty_init
-                elif i_epoch < int(R['max_epoch'] / 2):
-                    temp_penalty_bd = 0.1 * bd_penalty_init
-                elif i_epoch < int(3 * R['max_epoch'] / 4):
-                    temp_penalty_bd = 0.05 * bd_penalty_init
-                else:
-                    temp_penalty_bd = 0.02 * bd_penalty_init
             else:
                 temp_penalty_bd = bd_penalty_init
 
@@ -299,7 +304,7 @@ def solve_Multiscale_PDE(R):
                 feed_dict={XYZ_it: xyz_it_batch, XYZ_left_bd: xyz_left_batch, XYZ_right_bd: xyz_right_batch,
                            XYZ_bottom_bd: xyz_bottom_batch, XYZ_top_bd: xyz_top_batch, XYZ_front_bd: xyz_front_batch,
                            XYZ_behind_bd: xyz_behind_batch, in_learning_rate: tmp_lr,
-                           boundary_penalty: temp_penalty_bd, train_opt: train_option})
+                           boundary_penalty: temp_penalty_bd})
 
             loss_it_all.append(loss_it_tmp)
             loss_bd_all.append(loss_bd_tmp)
@@ -309,20 +314,19 @@ def solve_Multiscale_PDE(R):
 
             if i_epoch % 1000 == 0:
                 run_times = time.time() - t0
-                DNN_tools.print_and_log_train_one_epoch(
+                DNN_Log_Print.print_and_log_train_one_epoch(
                     i_epoch, run_times, tmp_lr, temp_penalty_bd, pwb, loss_it_tmp, loss_bd_tmp, loss_tmp, train_mse_tmp,
                     train_res_tmp, log_out=log_fileout)
 
                 # ---------------------------   test network ----------------------------------------------
                 test_epoch.append(i_epoch / 1000)
-                train_option = False
                 if R['PDE_type'] == 'general_Laplace' or R['PDE_type'] == 'pLaplace' or \
                         R['PDE_type'] == 'Possion_Boltzmann':
                     u_true2test, u_nn2test = sess.run(
-                        [U_true, UNN], feed_dict={XYZ_it: test_xyz_bach, train_opt: train_option})
+                        [U_true, UNN], feed_dict={XYZ_it: test_xyz_bach})
                 else:
                     u_true2test = u_true
-                    u_nn2test = sess.run(UNN,  feed_dict={XYZ_it: test_xyz_bach, train_opt: train_option})
+                    u_nn2test = sess.run(UNN,  feed_dict={XYZ_it: test_xyz_bach})
 
                 point_square_error = np.square(u_true2test - u_nn2test)
                 mse2test = np.mean(point_square_error)
@@ -330,7 +334,7 @@ def solve_Multiscale_PDE(R):
                 res2test = mse2test / np.mean(np.square(u_true2test))
                 test_rel_all.append(res2test)
 
-                DNN_tools.print_and_log_test_one_epoch(mse2test, res2test, log_out=log_fileout)
+                DNN_Log_Print.print_and_log_test_one_epoch(mse2test, res2test, log_out=log_fileout)
 
         # ------------------- save the testing results into mat file and plot them -------------------------
         saveData.save_trainLoss2mat_1actFunc(loss_it_all, loss_bd_all, loss_all, actName=act_func,
@@ -368,7 +372,7 @@ def solve_Multiscale_PDE(R):
 if __name__ == "__main__":
     R={}
     # -------------------------------------- CPU or GPU 选择 -----------------------------------------------
-    R['gpuNo'] = 0
+    R['gpuNo'] = 1
     # 默认使用 GPU，这个标记就不要设为-1，设为0,1,2,3,4....n（n指GPU的数目，即电脑有多少块GPU）
     # os.environ["CUDA_VISIBLE_DEVICES"] = "-1" # -1代表使用 CPU 模式
     # os.environ["CUDA_VISIBLE_DEVICES"] = "0"  # 设置当前使用的GPU设备仅为第 0 块GPU, 设备名称为'/gpu:0'
@@ -386,8 +390,8 @@ if __name__ == "__main__":
 
     # 文件保存路径设置
     # store_file = 'Laplace3D'
-    store_file = 'pLaplace3D'
-    # store_file = 'Boltzmann3D'
+    # store_file = 'pLaplace3D'
+    store_file = 'Boltzmann3D'
     # store_file = 'Convection3D'
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     sys.path.append(BASE_DIR)
@@ -494,17 +498,18 @@ if __name__ == "__main__":
     R['init_boundary_penalty'] = 100  # Regularization parameter for boundary conditions
 
     # 网络的频率范围设置
-    R['freqs'] = np.concatenate(([1], np.arange(1, 100 - 1)), axis=0)
+    # R['freq'] = np.concatenate(([1], np.arange(1, 100 - 1)), axis=0)
+    R['freq'] = np.random.normal(0, 100, 100)
 
     # &&&&&&&&&&&&&&&&&&& 使用的网络模型 &&&&&&&&&&&&&&&&&&&&&&&&&&&
-    # R['model'] = 'DNN'
-    R['model'] = 'DNN_scale'
-    # R['model'] = 'DNN_adapt_scale'
-    # R['model'] = 'DNN_FourierBase'
-    # R['model'] = 'DNN_Sin+Cos_Base'
+    # R['model2NN'] = 'DNN'
+    # R['model2NN'] = 'DNN_scale'
+    # R['model2NN'] = 'DNN_adapt_scale'
+    R['model2NN'] = 'DNN_FourierBase'
+    # R['model2NN'] = 'DNN_Sin+Cos_Base'
 
     # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    if R['model'] == 'DNN_FourierBase':
+    if R['model2NN'] == 'DNN_FourierBase':
         R['hidden_layers'] = (250, 400, 400, 200, 200, 150)  # 250+500*400+400*400+400*200+200*200+200*150+150 = 510400
     else:
         # R['hidden_layers'] = (100, 10, 8, 6, 4)  # 测试
@@ -521,20 +526,28 @@ if __name__ == "__main__":
         # R['hidden_layers'] = (2000, 1500, 1000, 500, 250)
 
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    # R['activate_func'] = 'relu'
-    # R['activate_func'] = 'tanh'
-    # R['activate_func']' = leaky_relu'
-    # R['activate_func'] = 'srelu'
-    R['activate_func'] = 's2relu'
-    # R['activate_func'] = 'sinADDcos'
-    # R['activate_func'] = 'elu'
-    # R['activate_func'] = 'phi'
+    R['name2act_in'] = 'relu'
 
-    if R['model'] == 'DNN_FourierBase' and R['activate_func'] == 'tanh':
+    # R['name2act_hidden'] = 'relu'
+    R['name2act_hidden'] = 'tanh'
+    # R['name2act_hidden']' = leaky_relu'
+    # R['name2act_hidden'] = 'srelu'
+    # R['name2act_hidden'] = 's2relu'
+    # R['name2act_hidden'] = 'scsrelu'
+    # R['name2act_hidden'] = 'sin'
+    # R['name2act_hidden'] = 'sinAddcos'
+    # R['name2act_hidden'] = 'elu'
+    # R['name2act_hidden'] = 'phi'
+
+    R['name2act_out'] = 'linear'
+
+    if R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'tanh':
         # R['sfourier'] = 0.5
         R['sfourier'] = 1.0
-    elif R['model'] == 'DNN_FourierBase' and R['activate_func'] == 's2relu':
+    elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 's2relu':
         R['sfourier'] = 0.5
+    else:
+        R['sfourier'] = 1.0
 
     solve_Multiscale_PDE(R)
 
