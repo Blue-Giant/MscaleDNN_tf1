@@ -16,10 +16,7 @@ import DNN_data
 import General_Laplace
 import MS_LaplaceEqs
 import MS_BoltzmannEqs
-import MS_ConvectionEqs
-import matData2Laplace
-import matData2Boltzmann
-import matData2HighDim
+import Load_data2Mat
 import saveData
 import plotData
 import DNN_Log_Print
@@ -267,7 +264,7 @@ def solve_Multiscale_PDE(R):
         test_bach_size = 1600
         size2test = 40
         mat_data_path = 'dataMat_highDim'
-        test_xyz_bach = matData2HighDim.get_data2Biharmonic(dim=input_dim, data_path=mat_data_path)
+        test_xyz_bach = Load_data2Mat.get_randomData2mat(dim=input_dim, data_path=mat_data_path)
         saveData.save_testData_or_solus2mat(test_xyz_bach, dataName='testXYZ', outPath=R['FolderName'])
 
     # ConfigProto 加上allow_soft_placement=True就可以使用 gpu 了

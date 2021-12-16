@@ -17,18 +17,36 @@ def get_infos2Boltzmann_1D(in_dim=1, out_dim=1, region_a=0.0, region_b=1.0, inde
         kappa = lambda x: tf.ones_like(x)
         Aeps = lambda x: 1.0 / (2 + tf.cos(2 * np.pi * x / eps))
 
-        utrue = lambda x: x - tf.square(x) + (eps / (4*np.pi)) * tf.sin(np.pi * 2 * x / eps)
+        utrue = lambda x: x - x*x + (eps / (4*np.pi)) * tf.sin(np.pi * 2 * x / eps)
 
         ul = lambda x: tf.zeros_like(x)
 
         ur = lambda x: tf.zeros_like(x)
 
-        if index2p == 2:
+        if index2p == 1:
             f = lambda x: 2.0/(2 + tf.cos(2 * np.pi * x / eps)) + (4*np.pi*x/eps)*tf.sin(np.pi * 2 * x / eps)/\
                           ((2 + tf.cos(2 * np.pi * x / eps))*(2 + tf.cos(2 * np.pi * x / eps))) + x - tf.square(x) \
                           + (eps / (4*np.pi)) * tf.sin(np.pi * 2 * x / eps)
+        elif index2p == 2:
+            f = lambda x: 2.0/(2 + tf.cos(2 * np.pi * x / eps)) + \
+                          (4*np.pi*x/eps)*tf.sin(np.pi*2*x/eps)/((2 + tf.cos(2*np.pi*x/eps))*(2+tf.cos(2*np.pi*x/eps))) + \
+                          (x-x*x+(eps/(4*np.pi))*tf.sin(np.pi*2*x/eps))*(x-x*x+(eps/(4*np.pi))*tf.sin(np.pi*2*x/eps))
 
         return Aeps, kappa, utrue, ul, ur, f
+
+
+def get_force_side2Boltzmann_1D(x, index2p=2, eps=0.01, eqs_name=None):
+    utrue = x - x * x + (eps / (4 * np.pi)) * tf.sin(np.pi * 2 * x / eps)
+    ux = 1-2*x + 0.5*tf.cos(np.pi * 2 * x / eps)
+    uxx = - 2.0 - (np.pi/eps)*tf.sin(np.pi * 2 * x / eps)
+    fenmu2Aeps = 2 + tf.cos(2 * np.pi * x / eps)
+    Aeps = 1.0 / fenmu2Aeps
+    Aepsx = (2.0*np.pi/eps)*tf.sin(np.pi*2*x/eps)/(fenmu2Aeps*fenmu2Aeps)
+    if index2p == 1:
+        f = -1.0 * (Aepsx * ux + Aeps * uxx) + utrue
+    elif index2p == 2:
+        f = -1.0 * (Aepsx * ux + Aeps * uxx) + utrue*utrue
+    return f
 
 
 def get_infos2Boltzmann_2D(equa_name=None, intervalL=0.1, intervalR=1.0):
@@ -263,11 +281,10 @@ def get_infos2Boltzmann_3D(input_dim=1, out_dim=1, mesh_number=2, intervalL=0.0,
         u_20 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalL) + 0.05*tf.sin(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*intervalL)
         u_21 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalR) + 0.05*tf.sin(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*intervalR)
         return A_eps, kappa, fside, utrue, u_00, u_01, u_10, u_11, u_20, u_21
-    elif equa_name == 'Boltzmann7':
+    elif equa_name == 'Boltzmann8':
         fside = lambda x, y, z: tf.ones_like(x)
-        u_true = lambda x, y, z: tf.sin(np.pi * x) * tf.sin(np.pi * y) * tf.sin(np.pi * z) + 0.01 * tf.sin(
-            10 * np.pi * x) * tf.sin(20 * np.pi * y) * tf.sin(50 * np.pi * z)
-        A_eps = lambda x, y, z: 0.25 * (2.0 + tf.cos(10.0*np.pi*x) * tf.cos(25.0*np.pi*y) * tf.cos(50.0*np.pi*z))
+        utrue = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
+        A_eps = lambda x, y, z: 0.25 * (2.0 + tf.cos(np.pi*x) * tf.cos(np.pi*y) * tf.cos(np.pi*z) + tf.cos(20.0*np.pi*x) * tf.cos(20.0*np.pi*y) * tf.cos(20.0*np.pi*z))
         kappa = lambda x, y, z: tf.ones_like(x)*(np.pi)*(np.pi)
         u_00 = lambda x, y, z: tf.sin(np.pi*intervalL)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
         u_01 = lambda x, y, z: tf.sin(np.pi*intervalR)*tf.sin(np.pi*y)*tf.sin(np.pi*z)
@@ -275,7 +292,7 @@ def get_infos2Boltzmann_3D(input_dim=1, out_dim=1, mesh_number=2, intervalL=0.0,
         u_11 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*intervalR)*tf.sin(np.pi*z)
         u_20 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalL)
         u_21 = lambda x, y, z: tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*intervalR)
-        return A_eps, kappa, fside, u_true, u_00, u_01, u_10, u_11, u_20, u_21
+        return A_eps, kappa, fside, utrue, u_00, u_01, u_10, u_11, u_20, u_21
 
 
 def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
@@ -318,9 +335,12 @@ def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
         uy = np.pi*tf.sin(np.pi*x)*tf.cos(np.pi*y)*tf.sin(np.pi*z)+0.05*20*np.pi*tf.sin(10*np.pi*x)*tf.cos(20*np.pi*y)*tf.sin(30*np.pi*z)
         uz = np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.cos(np.pi*z)+0.05*30*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.cos(30*np.pi*z)
 
-        uxx = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-0.05*100*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
-        uyy = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-0.05*400*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
-        uzz = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-0.05*900*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
+        uxx = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-\
+              0.05*100*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
+        uyy = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-\
+              0.05*400*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
+        uzz = -1.0*np.pi*np.pi*tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)-\
+              0.05*900*np.pi*np.pi*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(30*np.pi*z)
 
         Aepsx = -0.5*10*np.pi*tf.sin(10*np.pi * x) * tf.cos(20 * np.pi * y) * tf.cos(30 * np.pi * z)
         Aepsy = -0.5*20*np.pi*tf.cos(10*np.pi * x) * tf.sin(20 * np.pi * y) * tf.cos(30 * np.pi * z)
@@ -363,10 +383,14 @@ def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
 
         fside = -1.0 * (Aepsx * ux + Aepsy * uy + Aepsz * uz + Aeps * (uxx + uyy + uzz)) + (np.pi) * (np.pi) * utrue
         return fside
-    elif equa_name == 'Boltzmann7':
+    elif equa_name == 'Boltzmann8':
         utrue = tf.sin(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)+\
-                0.01*tf.sin(10*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(50*np.pi*z)
-        Aeps = 0.25 * (2.0 + tf.cos(10.0*np.pi*x) * tf.cos(20.0*np.pi*y) * tf.cos(50.0*np.pi*z))
+                0.05*tf.sin(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*z) + \
+                0.01*tf.sin(50*np.pi*x)*tf.sin(50*np.pi*y)*tf.sin(50*np.pi*z)
+        Aeps = 0.25*(3.0+tf.cos(np.pi*x)*tf.cos(np.pi*y)*tf.cos(np.pi*z)+
+                     tf.cos(20.0*np.pi*x)*tf.cos(20.0*np.pi*y)*tf.cos(20.0*np.pi*z)+
+                     tf.cos(50.0*np.pi*x)*tf.cos(50.0*np.pi*y)*tf.cos(50.0*np.pi*z))
+
         ux = np.pi*tf.cos(np.pi*x)*tf.sin(np.pi*y)*tf.sin(np.pi*z)+\
              1.0*np.pi*tf.cos(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.sin(20*np.pi*z) + \
              0.5*np.pi*tf.cos(50*np.pi*x)*tf.sin(50*np.pi*y)*tf.sin(50*np.pi*z)
@@ -391,7 +415,7 @@ def get_force2Boltzmann3D(x=None, y=None, z=None, equa_name=None):
                 0.25*50*np.pi*tf.sin(50.0*np.pi*x)*tf.cos(50.0*np.pi*y)*tf.cos(50.0*np.pi*z)
         Aepsy = -0.25*np.pi*tf.cos(np.pi*x)*tf.sin(np.pi*y)*tf.cos(np.pi*z) - \
                 0.25*20.0*np.pi*tf.cos(20*np.pi*x)*tf.sin(20*np.pi*y)*tf.cos(20*np.pi*z) - \
-                0.25*50*np.pi*tf.cos(50.0*np.pi*x)*tf.sin(50.0*np.pi*y)*tf.cos(50.0*np.pi*z)
+                50*np.pi*tf.cos(50.0*np.pi*x)*tf.sin(50.0*np.pi*y)*tf.cos(50.0*np.pi*z)
         Aepsz = -0.25*np.pi*tf.cos(np.pi*x)*tf.cos(np.pi*y)*tf.sin(np.pi*z) - \
                 0.25*20.0*np.pi*tf.cos(20*np.pi*x)*tf.cos(20*np.pi*y)*tf.sin(20*np.pi*z)-\
                 0.25*50*np.pi*tf.cos(50.0*np.pi*x)*tf.cos(50.0*np.pi*y)*tf.sin(50.0*np.pi*z)

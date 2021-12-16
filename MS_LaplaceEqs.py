@@ -64,7 +64,20 @@ def get_infos2pLaplace_1D_2(in_dim=None, out_dim=None, intervalL=0, intervalR=1,
     return utrue, f, aeps, u_l, u_r
 
 
-def get_infos2pLaplace_1D_3scale(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.02, eps2=0.01,
+def get_infos2pLaplace_1D_3scale2(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.1, eps2=0.01,
+                                 equa_name=None):
+    aeps = lambda x: (2 + tf.cos(2 * np.pi * x / eps1)) * (2 + tf.cos(2 * np.pi * x / eps2))
+
+    utrue = lambda x: x - tf.square(x) + (eps1/(4*np.pi))*tf.sin(2*np.pi*x/eps1) + (eps2/(4*np.pi))*tf.sin(2*np.pi*x/eps2)
+
+    u_l = lambda x: tf.zeros_like(x)
+
+    u_r = lambda x: tf.zeros_like(x)
+
+    return utrue, aeps, u_l, u_r
+
+
+def get_infos2pLaplace_1D_3scale3(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.1, eps2=0.01,
                                  equa_name=None):
     aeps = lambda x: 1.0/((2 + tf.cos(2 * np.pi * x / eps1)) * (2 + tf.cos(2 * np.pi * x / eps2)))
 
@@ -74,16 +87,7 @@ def get_infos2pLaplace_1D_3scale(in_dim=None, out_dim=None, intervalL=0, interva
 
     u_r = lambda x: tf.zeros_like(x)
 
-    ax = lambda x: -(2*np.pi/eps1)*tf.sin(2 * np.pi * x / eps1)*(1 + tf.cos(2 * np.pi * x / eps2)) - \
-                   (2*np.pi/eps2)*tf.sin(2 * np.pi * x / eps2)*(1 + tf.cos(2 * np.pi * x / eps1))
-
-    ux = lambda x: 1 -2*x + 0.5*tf.cos(2 * np.pi * x / eps1) + 0.5*tf.cos(2 * np.pi * x / eps2)
-
-    uxx = lambda x: -2-(np.pi/eps1)*tf.sin(2 * np.pi * x / eps1)-(np.pi/eps2)*tf.sin(2 * np.pi * x / eps2)
-
-    f = lambda x: tf.ones_like(x)
-
-    return utrue, f, aeps, u_l, u_r
+    return utrue, aeps, u_l, u_r
 
 
 def get_infos2pLaplace_1D_4(in_dim=None, out_dim=None, intervalL=0, intervalR=1, index2p=2, eps1=0.02, eps2=0.01, equa_name=None):

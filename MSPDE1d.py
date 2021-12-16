@@ -35,7 +35,7 @@ def solve_Multiscale_PDE(R):
     batchsize_bd = R['batch_size2boundary']
 
     bd_penalty_init = R['init_boundary_penalty']                # Regularization parameter for boundary conditions
-    penalty2WB = R['penalty2weight_biases']                # Regularization parameter for weights and biases
+    penalty2WB = R['penalty2weight_biases']                     # Regularization parameter for weights and biases
     lr_decay = R['learning_rate_decay']
     learning_rate = R['learning_rate']
     hidden_layers = R['hidden_layers']
@@ -68,7 +68,7 @@ def solve_Multiscale_PDE(R):
                 in_dim=input_dim, out_dim=out_dim, intervalL=region_l, intervalR=region_r, index2p=p_index, eps=epsilon)
         elif R['equa_name'] == '3scale2':
             epsilon2 = 0.01
-            u_true, f, A_eps, u_left, u_right = MS_LaplaceEqs.get_infos2pLaplace_1D_3scale(
+            u_true, A_eps, u_left, u_right = MS_LaplaceEqs.get_infos2pLaplace_1D_3scale2(
                 in_dim=input_dim, out_dim=out_dim, intervalL=region_l, intervalR=region_r, index2p=p_index, eps1=epsilon,
                 eps2=epsilon2)
         elif R['equa_name'] == 'rand_ceof':
@@ -125,7 +125,7 @@ def solve_Multiscale_PDE(R):
                 UNN_right = DNN_base.DNN(X_right, Weights, Biases, hidden_layers, activateIn_name=R['name2act_in'],
                                          activate_name=R['name2act_hidden'], activateOut_name=R['name2act_out'])
             elif R['model2NN'] == 'DNN_scale':
-                freqs = R['freqs']
+                freqs = R['freq']
                 UNN = DNN_base.DNN_scale(X_it, Weights, Biases, hidden_layers, freqs, activateIn_name=R['name2act_in'],
                                          activate_name=act_func, activateOut_name=R['name2act_out'])
                 UNN_left = DNN_base.DNN_scale(X_left, Weights, Biases, hidden_layers, freqs,
@@ -135,7 +135,7 @@ def solve_Multiscale_PDE(R):
                                                activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
                                                activateOut_name=R['name2act_out'])
             elif R['model2NN'] == 'DNN_adapt_scale':
-                freqs = R['freqs']
+                freqs = R['freq']
                 UNN = DNN_base.DNN_adapt_scale(X_it, Weights, Biases, hidden_layers, freqs,
                                                activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
                                                activateOut_name=R['name2act_out'])
@@ -168,7 +168,7 @@ def solve_Multiscale_PDE(R):
                     if R['equa_name'] == '3scale2':
                         a_eps = A_eps(X_it)                          # * 行 1 列
                         AdUNN_pNorm = tf.reduce_sum(a_eps * tf.pow(tf.abs(dUNN), p_index), axis=-1)
-                        fx = MS_LaplaceEqs.force_side_3scale(X_it, eps1=R['epsilon'], eps2=0.01)
+                        fx = MS_LaplaceEqs.force_sice_3scale2(X_it, eps1=R['epsilon'], eps2=0.01)
                         loss_it_variational = (1.0 / p_index) * tf.reshape(AdUNN_pNorm, shape=[-1, 1]) - \
                                               tf.multiply(tf.reshape(fx, shape=[-1, 1]), UNN)
                     elif R['equa_name'] == 'rand_ceof':
@@ -196,10 +196,17 @@ def solve_Multiscale_PDE(R):
                     a_eps = 1 / (2 + tf.cos(2 * np.pi * X_it / epsilon))
                     Kappa = kappa(X_it)
                     AdUNN_pNorm = tf.reduce_sum(a_eps * tf.pow(tf.abs(dUNN), p_index), axis=-1)
-                    loss_it_variational = (1.0 / p_index) * (tf.reshape(AdUNN_pNorm, shape=[-1, 1]) + Kappa*UNN*UNN) - \
-                                          tf.multiply(tf.reshape(f(X_it), shape=[-1, 1]), UNN)
+                    if R['equa_name'] == 'Boltzmann2':
+                        fside = MS_BoltzmannEqs.get_force_side2Boltzmann_1D(X_it, index2p=p_index, eps=epsilon)
+                    else:
+                        fside = tf.reshape(f(X_it), shape=[-1, 1])
+                    if p_index == 1:
+                        loss_it_variational = (1.0 / 2) * (tf.reshape(AdUNN_pNorm, shape=[-1, 1]) +
+                                               Kappa*UNN*UNN) - tf.multiply(fside, UNN)
+                    elif p_index == 2:
+                        loss_it_variational = (1.0 / 2) * (tf.reshape(AdUNN_pNorm, shape=[-1, 1]) +
+                                               Kappa*UNN*UNN*UNN) - tf.multiply(fside, UNN)
 
-                # loss_it = tf.reduce_mean(loss_it_variational)*(region_r-region_l)
                 loss_it = tf.reduce_mean(loss_it_variational)
             elif R['loss_type'] == 'L2_loss':
                 dUNN = tf.gradients(UNN, X_it)
@@ -221,7 +228,7 @@ def solve_Multiscale_PDE(R):
                     AdUNNpNorm_dUNN = tf.multiply(AdUNNpNorm, dUNN)
                     dAdUNNpNorm_dUNN = tf.gradients(AdUNNpNorm_dUNN, X_it)
                     if R['equa_name'] == '3scale2':
-                        fx = MS_LaplaceEqs.force_side_3scale(X_it, eps1=R['epsilon'], eps2=0.01)
+                        fx = MS_LaplaceEqs.force_sice_3scale2(X_it, eps1=R['epsilon'], eps2=0.01)
                         loss_it_L2 = dAdUNNpNorm_dUNN + tf.reshape(fx, shape=[-1, 1])
                     else:
                         loss_it_L2 = dAdUNNpNorm_dUNN + tf.reshape(f(X_it), shape=[-1, 1])
@@ -374,7 +381,7 @@ def solve_Multiscale_PDE(R):
 
 if __name__ == "__main__":
     R={}
-    R['gpuNo'] = 0
+    R['gpuNo'] = 1
     # 默认使用 GPU，这个标记就不要设为-1，设为0,1,2,3,4....n（n指GPU的数目，即电脑有多少块GPU）
     if platform.system() == 'Windows':
         os.environ["CDUA_VISIBLE_DEVICES"] = "%s" % (R['gpuNo'])
@@ -500,14 +507,14 @@ if __name__ == "__main__":
     # 网络的频率范围设置
     R['freq'] = np.arange(1, 121)
 
-    # R['freqs'] = np.concatenate((np.random.normal(0, 1, 30), np.random.normal(0, 20, 30),
+    # R['freq'] = np.concatenate((np.random.normal(0, 1, 30), np.random.normal(0, 20, 30),
     #                              np.random.normal(0, 50, 30), np.random.normal(0, 120, 30)), axis=0)
 
     # &&&&&&&&&&&&&&&&&&& 使用的网络模型 &&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['model2NN'] = 'DNN'
-    # R['model2NN'] = 'DNN_scale'
+    R['model2NN'] = 'DNN_scale'
     # R['model2NN'] = 'DNN_adapt_scale'
-    R['model2NN'] = 'DNN_FourierBase'
+    # R['model2NN'] = 'DNN_FourierBase'
     # R['model2NN'] = 'DNN_WaveletBase'
 
     # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -519,16 +526,19 @@ if __name__ == "__main__":
                 R['hidden_layers'] = (125, 100, 80, 80, 60)  # 1*125+250*100+100*80+80*80+80*60+60*1= 44385 个参数
         elif R['order2pLaplace_operator'] == 5:
             if R['epsilon'] == 0.1:
-                R['hidden_layers'] = (125, 120, 80, 80, 80)  # 1*125+250*120+120*80+80*80+80*80+80*1= 52605 个参数
+                R['hidden_layers'] = (125, 100, 80, 80, 60)  # 1*125+250*120+120*80+80*80+80*80+80*1= 52605 个参数
             else:
-                R['hidden_layers'] = (125, 120, 80, 80, 80)  # 1*125+250*120+120*80+80*80+80*80+80*1= 52605 个参数
+                R['hidden_layers'] = (125, 100, 80, 80, 60)  # 1*125+250*120+120*80+80*80+80*80+80*1= 52605 个参数
         elif R['order2pLaplace_operator'] == 8:
             if R['epsilon'] == 0.1:
-                R['hidden_layers'] = (125, 150, 100, 100, 80)  # 1*125+250*150+150*100+100*100+100*80+80*1= 70705 个参数
+                R['hidden_layers'] = (125, 100, 80, 80, 60)  # 1*125+250*150+150*100+100*100+100*80+80*1= 70705 个参数
             else:
-                R['hidden_layers'] = (125, 150, 100, 100, 80)  # 1*125+250*150+150*100+100*100+100*80+80*1= 70705 个参数
+                R['hidden_layers'] = (125, 100, 80, 80, 60)  # 1*125+250*150+150*100+100*100+100*80+80*1= 70705 个参数
         else:
-            R['hidden_layers'] = (225, 200, 150, 150, 100, 50, 50)
+            R['hidden_layers'] = (125, 100, 80, 80, 60)
+
+        if R['equa_name'] == '3scale2':
+            R['hidden_layers'] = (175, 300, 200, 200, 100)  # 172775
     else:
         if R['order2pLaplace_operator'] == 2:
             if R['epsilon'] == 0.1:
@@ -537,26 +547,35 @@ if __name__ == "__main__":
                 R['hidden_layers'] = (250, 100, 80, 80, 60)  # 1*250+250*100+100*80+80*80+80*60+60*1= 44510 个参数
         elif R['order2pLaplace_operator'] == 5:
             if R['epsilon'] == 0.1:
-                R['hidden_layers'] = (250, 120, 80, 80, 80)  # 1*250+250*120+120*80+80*80+80*80+80*1= 52730 个参数
+                R['hidden_layers'] = (250, 100, 80, 80, 60)  # 1*250+250*120+120*80+80*80+80*80+80*1= 52730 个参数
             else:
-                R['hidden_layers'] = (250, 120, 80, 80, 80)  # 1*250+250*120+120*80+80*80+80*80+80*1= 52730 个参数
+                R['hidden_layers'] = (250, 100, 80, 80, 60)  # 1*250+250*120+120*80+80*80+80*80+80*1= 52730 个参数
         elif R['order2pLaplace_operator'] == 8:
             if R['epsilon'] == 0.1:
-                R['hidden_layers'] = (250, 150, 100, 100, 80)  # 1*250+250*150+150*100+100*100+100*80+80*1= 70830 个参数
+                R['hidden_layers'] = (250, 100, 80, 80, 60)  # 1*250+250*150+150*100+100*100+100*80+80*1= 70830 个参数
             else:
-                R['hidden_layers'] = (250, 150, 100, 100, 80)  # 1*250+250*150+150*100+100*100+100*80+80*1= 70830 个参数
+                R['hidden_layers'] = (250, 100, 80, 80, 60)  # 1*250+250*150+150*100+100*100+100*80+80*1= 70830 个参数
         else:
-            R['hidden_layers'] = (450, 200, 150, 150, 100, 50, 50)
+            R['hidden_layers'] = (250, 100, 80, 80, 60)
+
+        if R['equa_name'] == '3scale2':
+            R['hidden_layers'] = (350, 300, 200, 200, 100)
 
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    R['name2act_in'] = 'tanh'
+    # R['name2act_in'] = 'tanh'
+    # R['name2act_in'] = 's2relu'
+    # R['name2act_in'] = 'gelu'
+    # R['name2act_in'] = 'sin'
+    R['name2act_in'] = 'sinADDcos'
 
     # R['name2act_hidden'] = 'relu'
     # R['name2act_hidden'] = 'tanh'
     # R['name2act_hidden'] = 'srelu'
-    R['name2act_hidden'] = 's2relu'
-    # R['name2act_hidden'] = 'sinADDcos'
+    # R['name2act_hidden'] = 's2relu'
+    # R['name2act_hidden'] = 'sin'
+    R['name2act_hidden'] = 'sinADDcos'
     # R['name2act_hidden'] = 'elu'
+    # R['name2act_hidden'] = 'gelu'
     # R['name2act_hidden'] = 'phi'
 
     R['name2act_out'] = 'linear'
@@ -564,9 +583,17 @@ if __name__ == "__main__":
     if R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'tanh':
         R['sfourier'] = 1.0
     elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 's2relu':
+        # R['sfourier'] = 0.5
+        R['sfourier'] = 1.0
+    elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'gelu':
+        R['sfourier'] = 1.0
+    elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'sinADDcos':
+        # R['sfourier'] = 1.0
         R['sfourier'] = 0.5
     else:
         R['sfourier'] = 1.0
 
     solve_Multiscale_PDE(R)
+
+#     对于FourierBased_DNN, [sin;cos] + s2relu选择要比其他激活函数的选择好很多, 且sFourier=0.5要比sFourier=1.0好些
 
