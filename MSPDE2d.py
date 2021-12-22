@@ -430,7 +430,7 @@ def solve_Multiscale_PDE(R):
             saveData.save_meshData2mat(test_xy_bach, dataName='meshXY', mesh_number=mesh_number,
                                        outPath=R['FolderName'])
         else:
-            test_xy_bach = Load_data2Mat.get_randData2Laplace(dim=input_dim, data_path='dataMat_highDim')
+            test_xy_bach = Load_data2Mat.get_randomData2mat(dim=input_dim, data_path='dataMat_highDim')
             size2batch = np.shape(test_xy_bach)[0]
             size2test = int(np.sqrt(size2batch))
 

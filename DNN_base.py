@@ -150,13 +150,13 @@ def cal_attends2neighbors(edge_point_set, dis_model='L1'):
     return:
         atten_ceof: (num_points, 1, k_neighbors)
     """
-    square_edges = tf.square(edge_point_set)            # (num_points, k_neighbors, dim2point)
+    square_edges = tf.square(edge_point_set)                           # (num_points, k_neighbors, dim2point)
     norm2edges = tf.reduce_sum(square_edges, axis=-1, keepdims=True)   # (num_points, k_neighbors)
     if str.lower(dis_model) == 'l1':
         norm2edges = tf.sqrt(norm2edges)
-    exp_dis = tf.exp(-norm2edges)                   # (num_points, k_neighbors)
+    exp_dis = tf.exp(-norm2edges)                                      # (num_points, k_neighbors)
     normalize_exp_dis = tf.nn.softmax(exp_dis, axis=1)
-    atten_ceof = tf.transpose(normalize_exp_dis, perm=[0, 2, 1])   # (num_points, 1, k_neighbors)
+    atten_ceof = tf.transpose(normalize_exp_dis, perm=[0, 2, 1])       # (num_points, 1, k_neighbors)
     return atten_ceof
 
 
@@ -168,12 +168,12 @@ def cal_edgesNorm_attends2neighbors(edge_point_set, dis_model='L1'):
         return:
         atten_ceof: (num_points, 1, k_neighbors)
     """
-    square_edges = tf.square(edge_point_set)            # (num_points, k_neighbors, dim2point)
+    square_edges = tf.square(edge_point_set)                           # (num_points, k_neighbors, dim2point)
     norm2edges = tf.reduce_sum(square_edges, axis=-1, keepdims=True)   # (num_points, k_neighbors)
     if str.lower(dis_model) == 'l1':
         norm2edges = tf.sqrt(norm2edges)
     normalize_edgeNrom = tf.nn.softmax(norm2edges, axis=1)
-    exp_dis = tf.exp(-norm2edges)                   # (num_points, k_neighbors)
+    exp_dis = tf.exp(-norm2edges)                                      # (num_points, k_neighbors)
     normalize_exp_dis = tf.nn.softmax(exp_dis, axis=1)
     atten_ceof = tf.transpose(normalize_exp_dis, perm=[0, 2, 1])
     return normalize_edgeNrom, atten_ceof
@@ -413,7 +413,7 @@ def Xavier_init_NN(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5):
     with tf.compat.v1.variable_scope('WB_scope', reuse=tf.compat.v1.AUTO_REUSE):
         n_hiddens = len(hidden_layers)
         Weights = []  # 权重列表，用于存储隐藏层的权重
-        Biases = []  # 偏置列表，用于存储隐藏层的偏置
+        Biases = []   # 偏置列表，用于存储隐藏层的偏置
         # 隐藏层：第一层的权重和偏置，对输入数据做变换
         stddev_WB = (2.0 / (in_size + hidden_layers[0])) ** varcoe
         W = tf.compat.v1.get_variable(name='W-transInput' + str(Flag), shape=(in_size, hidden_layers[0]),
@@ -449,8 +449,8 @@ def Xavier_init_NN(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5):
 def Xavier_init_NN_Fourier(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5):
     with tf.compat.v1.variable_scope('WB_scope', reuse=tf.compat.v1.AUTO_REUSE):
         n_hiddens = len(hidden_layers)
-        Weights = []  # 权重列表，用于存储隐藏层的权重
-        Biases = []  # 偏置列表，用于存储隐藏层的偏置
+        Weights = []   # 权重列表，用于存储隐藏层的权重
+        Biases = []    # 偏置列表，用于存储隐藏层的偏置
         # 隐藏层：第一层的权重和偏置，对输入数据做变换
         stddev_WB = (2.0 / (in_size + hidden_layers[0])) ** varcoe
         W = tf.compat.v1.get_variable(name='W-transInput' + str(Flag), shape=(in_size, hidden_layers[0]),

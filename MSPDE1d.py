@@ -23,9 +23,9 @@ import DNN_Log_Print
 
 
 def solve_Multiscale_PDE(R):
-    log_out_path = R['FolderName']        # 将路径从字典 R 中提取出来
-    if not os.path.exists(log_out_path):  # 判断路径是否已经存在
-        os.mkdir(log_out_path)            # 无 log_out_path 路径，创建一个 log_out_path 路径
+    log_out_path = R['FolderName']                                     # 将路径从字典 R 中提取出来
+    if not os.path.exists(log_out_path):                               # 判断路径是否已经存在
+        os.mkdir(log_out_path)                                         # 无 log_out_path 路径，创建一个 log_out_path 路径
     logfile_name = '%s_%s.txt' % ('logTrain', R['name2act_hidden'])
     log_fileout = open(os.path.join(log_out_path, logfile_name), 'w')  # 在这个路径下创建并打开一个可写的 log_train.txt文件
     DNN_Log_Print.dictionary_out2file(R, log_fileout)
@@ -110,7 +110,7 @@ def solve_Multiscale_PDE(R):
     global_steps = tf.compat.v1.Variable(0, trainable=False)
     with tf.device('/gpu:%s' % (R['gpuNo'])):
         with tf.compat.v1.variable_scope('vscope', reuse=tf.compat.v1.AUTO_REUSE):
-            X_it = tf.compat.v1.placeholder(tf.float32, name='X_it', shape=[None, input_dim])                # * 行 1 列
+            X_it = tf.compat.v1.placeholder(tf.float32, name='X_it', shape=[None, input_dim])          # * 行 1 列
             X_left = tf.compat.v1.placeholder(tf.float32, name='X_left', shape=[None, input_dim])      # * 行 1 列
             X_right = tf.compat.v1.placeholder(tf.float32, name='X_right', shape=[None, input_dim])    # * 行 1 列
             bd_penalty = tf.compat.v1.placeholder_with_default(input=1e3, shape=[], name='bd_p')
@@ -284,7 +284,7 @@ def solve_Multiscale_PDE(R):
 
             # 训练上的真解值和训练结果的误差
             if R['equa_name'] == 'rand_ceof':
-                U_true = random2pLaplace.rangdom_exact_solution(x=X_it, xi1=Xi1, xi2=Xi2, K=num2sun_term, alpha=Alpha)
+                U_true = random2pLaplace.rangdom_exact_solution_1(x=X_it, xi1=Xi1, xi2=Xi2, K=num2sun_term, alpha=Alpha)
                 mean_square_error = tf.reduce_mean(tf.square(U_true - dUNN))
                 residual_error = mean_square_error / tf.reduce_mean(tf.square(U_true))
             else:

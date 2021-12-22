@@ -300,8 +300,7 @@ def solve_Multiscale_PDE(R):
                 [train_my_loss, loss_it, loss_bd, loss, train_mse, train_rel, PWB],
                 feed_dict={XYZ_it: xyz_it_batch, XYZ_left_bd: xyz_left_batch, XYZ_right_bd: xyz_right_batch,
                            XYZ_bottom_bd: xyz_bottom_batch, XYZ_top_bd: xyz_top_batch, XYZ_front_bd: xyz_front_batch,
-                           XYZ_behind_bd: xyz_behind_batch, in_learning_rate: tmp_lr,
-                           boundary_penalty: temp_penalty_bd})
+                           XYZ_behind_bd: xyz_behind_batch, in_learning_rate: tmp_lr, boundary_penalty: temp_penalty_bd})
 
             loss_it_all.append(loss_it_tmp)
             loss_bd_all.append(loss_bd_tmp)
@@ -333,37 +332,37 @@ def solve_Multiscale_PDE(R):
 
                 DNN_Log_Print.print_and_log_test_one_epoch(mse2test, res2test, log_out=log_fileout)
 
-        # ------------------- save the testing results into mat file and plot them -------------------------
-        saveData.save_trainLoss2mat_1actFunc(loss_it_all, loss_bd_all, loss_all, actName=act_func,
-                                             outPath=R['FolderName'])
-        saveData.save_train_MSE_REL2mat(train_mse_all, train_rel_all, actName=act_func, outPath=R['FolderName'])
+    # ------------------- save the testing results into mat file and plot them -------------------------
+    saveData.save_trainLoss2mat_1actFunc(loss_it_all, loss_bd_all, loss_all, actName=act_func,
+                                         outPath=R['FolderName'])
+    saveData.save_train_MSE_REL2mat(train_mse_all, train_rel_all, actName=act_func, outPath=R['FolderName'])
 
-        plotData.plotTrain_loss_1act_func(loss_it_all, lossType='loss_it', seedNo=R['seed'], outPath=R['FolderName'])
-        plotData.plotTrain_loss_1act_func(loss_bd_all, lossType='loss_bd', seedNo=R['seed'], outPath=R['FolderName'],
-                                          yaxis_scale=True)
-        plotData.plotTrain_loss_1act_func(loss_all, lossType='loss', seedNo=R['seed'], outPath=R['FolderName'])
+    plotData.plotTrain_loss_1act_func(loss_it_all, lossType='loss_it', seedNo=R['seed'], outPath=R['FolderName'])
+    plotData.plotTrain_loss_1act_func(loss_bd_all, lossType='loss_bd', seedNo=R['seed'], outPath=R['FolderName'],
+                                      yaxis_scale=True)
+    plotData.plotTrain_loss_1act_func(loss_all, lossType='loss', seedNo=R['seed'], outPath=R['FolderName'])
 
-        saveData.save_train_MSE_REL2mat(train_mse_all, train_rel_all, actName=act_func, outPath=R['FolderName'])
-        plotData.plotTrain_MSE_REL_1act_func(train_mse_all, train_rel_all, actName=act_func, seedNo=R['seed'],
-                                             outPath=R['FolderName'], yaxis_scale=True)
+    saveData.save_train_MSE_REL2mat(train_mse_all, train_rel_all, actName=act_func, outPath=R['FolderName'])
+    plotData.plotTrain_MSE_REL_1act_func(train_mse_all, train_rel_all, actName=act_func, seedNo=R['seed'],
+                                         outPath=R['FolderName'], yaxis_scale=True)
 
-        # ----------------------  save testing results to mat files, then plot them --------------------------------
-        saveData.save_2testSolus2mat(u_true2test, u_nn2test, actName='utrue', actName1=act_func, outPath=R['FolderName'])
+    # ----------------------  save testing results to mat files, then plot them --------------------------------
+    saveData.save_2testSolus2mat(u_true2test, u_nn2test, actName='utrue', actName1=act_func, outPath=R['FolderName'])
 
-        # 绘制解的热力图(真解和DNN解)
-        plotData.plot_Hot_solution2test(u_true2test, size_vec2mat=size2test, actName='Utrue', seedNo=R['seed'],
-                                        outPath=R['FolderName'])
-        plotData.plot_Hot_solution2test(u_nn2test, size_vec2mat=size2test, actName=act_func, seedNo=R['seed'],
-                                        outPath=R['FolderName'])
+    # 绘制解的热力图(真解和DNN解)
+    plotData.plot_Hot_solution2test(u_true2test, size_vec2mat=size2test, actName='Utrue', seedNo=R['seed'],
+                                    outPath=R['FolderName'])
+    plotData.plot_Hot_solution2test(u_nn2test, size_vec2mat=size2test, actName=act_func, seedNo=R['seed'],
+                                    outPath=R['FolderName'])
 
-        saveData.save_testMSE_REL2mat(test_mse_all, test_rel_all, actName=act_func, outPath=R['FolderName'])
-        plotData.plotTest_MSE_REL(test_mse_all, test_rel_all, test_epoch, actName=act_func,
-                                  seedNo=R['seed'], outPath=R['FolderName'], yaxis_scale=True)
+    saveData.save_testMSE_REL2mat(test_mse_all, test_rel_all, actName=act_func, outPath=R['FolderName'])
+    plotData.plotTest_MSE_REL(test_mse_all, test_rel_all, test_epoch, actName=act_func,
+                              seedNo=R['seed'], outPath=R['FolderName'], yaxis_scale=True)
 
-        saveData.save_test_point_wise_err2mat(point_square_error, actName=act_func, outPath=R['FolderName'])
+    saveData.save_test_point_wise_err2mat(point_square_error, actName=act_func, outPath=R['FolderName'])
 
-        plotData.plot_Hot_point_wise_err(point_square_error, size_vec2mat=size2test, actName=act_func,
-                                         seedNo=R['seed'], outPath=R['FolderName'])
+    plotData.plot_Hot_point_wise_err(point_square_error, size_vec2mat=size2test, actName=act_func,
+                                     seedNo=R['seed'], outPath=R['FolderName'])
 
 
 if __name__ == "__main__":
@@ -496,7 +495,7 @@ if __name__ == "__main__":
 
     # 网络的频率范围设置
     # R['freq'] = np.concatenate(([1], np.arange(1, 100 - 1)), axis=0)
-    R['freq'] = np.random.normal(0, 100, 100)
+    R['freq'] = np.random.normal(0, 120, 120)
 
     # &&&&&&&&&&&&&&&&&&& 使用的网络模型 &&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['model2NN'] = 'DNN'
@@ -526,10 +525,10 @@ if __name__ == "__main__":
     R['name2act_in'] = 'relu'
 
     # R['name2act_hidden'] = 'relu'
-    R['name2act_hidden'] = 'tanh'
+    # R['name2act_hidden'] = 'tanh'
     # R['name2act_hidden']' = leaky_relu'
     # R['name2act_hidden'] = 'srelu'
-    # R['name2act_hidden'] = 's2relu'
+    R['name2act_hidden'] = 's2relu'
     # R['name2act_hidden'] = 'scsrelu'
     # R['name2act_hidden'] = 'sin'
     # R['name2act_hidden'] = 'sinAddcos'
