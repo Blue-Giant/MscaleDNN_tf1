@@ -491,6 +491,61 @@ def Xavier_init_NN_Fourier(in_size, out_size, hidden_layers, Flag='flag', varcoe
         return Weights, Biases
 
 
+def Xavier_init_NN_RBF(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5, opt2init_B2RBF='uniform_random',
+                       train_B2RBF=True, left_value=0.0, right_value=1.0, shuffle_B2RBF=True):
+    with tf.compat.v1.variable_scope('WB_scope', reuse=tf.compat.v1.AUTO_REUSE):
+        n_hiddens = len(hidden_layers)
+        Weights = []   # 权重列表，用于存储隐藏层的权重
+        Biases = []    # 偏置列表，用于存储隐藏层的偏置
+        # 隐藏层：第一层的权重和偏置，对输入数据做变换
+        stddev_WB = (2.0 / (in_size + hidden_layers[0])) ** varcoe
+        W2RBF = tf.compat.v1.get_variable(name='W2RBF' + str(Flag), shape=(1, hidden_layers[0]),
+                                          initializer=tf.random_normal_initializer(stddev=stddev_WB),
+                                          dtype=tf.float32)
+        if opt2init_B2RBF == 'uniform_random':
+            B_RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag),
+                                              initializer=tf.random.uniform([in_size, hidden_layers[0]],
+                                                                            minval=left_value, maxval=right_value),
+                                              dtype=tf.float32, trainable=train_B2RBF)
+        else:
+            B_RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag), shape=(in_size, hidden_layers[0]),
+                                              initializer=tf.random_normal_initializer(stddev=stddev_WB),
+                                              dtype=tf.float32, trainable=train_B2RBF)
+        if shuffle_B2RBF:
+            B2RBF = tf.random_shuffle(B_RBF)
+
+        Weights.append(W2RBF)
+        Biases.append(B2RBF)
+
+        for i_layer in range(0, n_hiddens - 1):
+            stddev_WB = (2.0 / (hidden_layers[i_layer] + hidden_layers[i_layer + 1])) ** varcoe
+            if 0 == i_layer:
+                W = tf.compat.v1.get_variable(
+                    name='W' + str(i_layer + 1) + str(Flag), shape=(hidden_layers[i_layer], hidden_layers[i_layer + 1]),
+                    initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+                B = tf.compat.v1.get_variable(name='B' + str(i_layer + 1) + str(Flag), shape=(hidden_layers[i_layer + 1],),
+                                              initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+            else:
+                W = tf.compat.v1.get_variable(
+                    name='W' + str(i_layer + 1) + str(Flag), shape=(hidden_layers[i_layer], hidden_layers[i_layer + 1]),
+                    initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+                B = tf.compat.v1.get_variable(name='B' + str(i_layer + 1) + str(Flag), shape=(hidden_layers[i_layer + 1],),
+                                              initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+            Weights.append(W)
+            Biases.append(B)
+
+        # 输出层：最后一层的权重和偏置。将最后的结果变换到输出维度
+        stddev_WB = (2.0 / (hidden_layers[-1] + out_size)) ** varcoe
+        W = tf.compat.v1.get_variable(name='W-outTrans' + str(Flag), shape=(hidden_layers[-1], out_size),
+                                      initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+        B = tf.compat.v1.get_variable(name='B-outTrans' + str(Flag), shape=(out_size,),
+                                      initializer=tf.random_normal_initializer(stddev=stddev_WB), dtype=tf.float32)
+
+        Weights.append(W)
+        Biases.append(B)
+        return Weights, Biases
+
+
 # ----------------------------------- 正则化 -----------------------------------------------
 def regular_weights_biases_L1(weights, biases):
     # L1正则化权重和偏置
@@ -1360,8 +1415,8 @@ def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activat
     return output
 
 
-def DNN_WaveletBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_name='tanh', activateOut_name='linear',
-                    repeat_Highfreq=True, sWavelet=0.5):
+def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_name='tanh', activateOut_name='linear',
+                repeat_Highfreq=True, sRBF=0.5, in_dim=2):
     """
     Args:
         variable_input: the input data, dim：NxD
@@ -1431,6 +1486,31 @@ def DNN_WaveletBase(variable_input, Weights, Biases, hiddens, scale_frag, activa
     else:
         act_out = linear
 
+    if 2 == in_dim:
+        X_vec1 = np.array([[1.0], [0.0]], dtype=np.float32)
+        X_vec2 = np.array([[0.0], [1.0]], dtype=np.float32)
+
+        B_vec1 = np.array([[1.0, 0.0]], dtype=np.float32)
+        B_vec2 = np.array([[0.0, 1.0]], dtype=np.float32)
+    elif 3 == in_dim:
+        X_vec1 = np.array([[1.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec2 = np.array([[0.0], [1.0], [0.0]], dtype=np.float32)
+        X_vec3 = np.array([[0.0], [0.0], [1.0]], dtype=np.float32)
+
+        B_vec1 = np.array([[1.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec2 = np.array([[0.0, 1.0, 0.0]], dtype=np.float32)
+        B_vec3 = np.array([[0.0, 0.0, 1.0]], dtype=np.float32)
+    elif 4 == in_dim:
+        X_vec1 = np.array([[1.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec2 = np.array([[0.0], [1.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec3 = np.array([[0.0], [0.0], [1.0], [0.0]], dtype=np.float32)
+        X_vec4 = np.array([[0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+
+        B_vec1 = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec2 = np.array([[0.0, 1.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec3 = np.array([[0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
+        B_vec4 = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+
     layers = len(hiddens) + 1                   # 得到输入到输出的层数，即隐藏层层数
     H = variable_input                          # 代表输入数据，即输入层
 
@@ -1452,25 +1532,75 @@ def DNN_WaveletBase(variable_input, Weights, Biases, hiddens, scale_frag, activa
     mixcoe = mixcoe.astype(np.float32)
 
     if str.lower(activate_name) == 'tanh':
-        sfactor = sWavelet
+        sfactor = sRBF
     elif str.lower(activate_name) == 's2relu':
         sfactor = 0.5
     elif str.lower(activate_name) == 'sinaddcos':
-        sfactor = sWavelet
+        sfactor = sRBF
     else:
-        sfactor = sWavelet
+        sfactor = sRBF
 
-    W_in = Weights[0]
-    B_in = Biases[0]
+    W2RBF = Weights[0]
+    B2RBF = Biases[0]
+
+    if 1 == in_dim:
+        diff2X = H - B2RBF
+        norm2diffx = tf.square(diff2X)
+    elif 2 == in_dim:
+        X1 = tf.matmul(H, X_vec1)
+        X2 = tf.matmul(H, X_vec2)
+        B1 = tf.matmul(B_vec1, B2RBF)
+        B2 = tf.matmul(B_vec2, B2RBF)
+        diff_X1 = X1 - B1
+        diff_X2 = X2 - B2
+        square_diff_X1 = tf.square(diff_X1)
+        square_diff_X2 = tf.square(diff_X2)
+        norm2diffx = square_diff_X1 + square_diff_X2
+    elif 3 == in_dim:
+        X1 = tf.matmul(H, X_vec1)
+        X2 = tf.matmul(H, X_vec2)
+        X3 = tf.matmul(H, X_vec3)
+
+        B1 = tf.matmul(B_vec1, B2RBF)
+        B2 = tf.matmul(B_vec2, B2RBF)
+        B3 = tf.matmul(B_vec3, B2RBF)
+
+        diff_X1 = X1 - B1
+        diff_X2 = X2 - B2
+        diff_X3 = X3 - B3
+        square_diff_X1 = tf.square(diff_X1)
+        square_diff_X2 = tf.square(diff_X2)
+        square_diff_X3 = tf.square(diff_X3)
+        norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3
+    elif 4 == in_dim:
+        X1 = tf.matmul(H, X_vec1)
+        X2 = tf.matmul(H, X_vec2)
+        X3 = tf.matmul(H, X_vec3)
+        X4 = tf.matmul(H, X_vec4)
+
+        B1 = tf.matmul(B_vec1, B2RBF)
+        B2 = tf.matmul(B_vec2, B2RBF)
+        B3 = tf.matmul(B_vec3, B2RBF)
+        B4 = tf.matmul(B_vec4, B2RBF)
+
+        diff_X1 = X1 - B1
+        diff_X2 = X2 - B2
+        diff_X3 = X3 - B3
+        diff_X4 = X4 - B4
+        square_diff_X1 = tf.square(diff_X1)
+        square_diff_X2 = tf.square(diff_X2)
+        square_diff_X3 = tf.square(diff_X3)
+        square_diff_X4 = tf.square(diff_X4)
+        norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3 + square_diff_X4
+    weight_norm2diff_X = tf.multiply(norm2diffx, W2RBF)
+
     if len(scale_frag) == 1:
-        H = tf.add(tf.matmul(H, W_in), B_in)
-        H = tf.exp(-0.5 * H * H) * sfactor*(tf.cos(1.75 * H) + tf.sin(1.75 * H))
+        H = tf.exp(-0.5 * weight_norm2diff_X)
+        # H = tf.exp(-0.5 *weight_norm2diff_X) * sfactor*(tf.cos(1.75 * norm2diffx) + tf.sin(1.75 * norm2diffx))
     else:
-        H = tf.add(tf.matmul(H, W_in), B_in)*mixcoe
-        # H = sfactor*tf.exp(-0.5*H*H)*tf.cos(1.75*H)
-        # H = sfactor*tf.exp(-0.25*H*H)*tf.cos(1.75*H)
-        H = tf.exp(-0.5 * H * H) * sfactor*(tf.cos(1.75 * H) + tf.sin(1.75 * H))
-        # H = sfactor * tf.exp(-0.5 * H * H) * (tf.cos(H) + tf.sin(H))
+        H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe)
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * norm2diffx)
+        # H = tf.exp(-0.5 * tf.square(H) * mixcoe) * sfactor * (tf.cos(1.75 * H) + tf.sin(1.75 * H))
 
     hiddens_record = hiddens[0]
     for k in range(layers-2):

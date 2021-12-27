@@ -111,6 +111,9 @@ def solve_Multiscale_PDE(R):
     flag1 = 'WB'
     if R['model2NN'] == 'DNN_FourierBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
+    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_B2RBF=False,
+                                                 left_value=region_lb, right_value=region_rt)
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -173,22 +176,18 @@ def solve_Multiscale_PDE(R):
                                                       activateOut_name=actOut_func, sFourier=R['sfourier'])
                 UNN_top = DNN_base.DNN_FourierBase(XY_top, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
                                                    activateOut_name=actOut_func, sFourier=R['sfourier'])
-            elif R['model'] == 'DNN_WaveletBase':
+            elif R['model2NN'] == 'DNN_WaveletBase':
                 freqs = R['freq']
-                UNN = DNN_base.DNN_WaveletBase(XY_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                               activateOut_name=actOut_func, sWavelet=R['sfourier'])
-                UNN_left = DNN_base.DNN_WaveletBase(XY_left, W2NN, B2NN, hidden_layers, freqs,
-                                                    activate_name=act_func, activateOut_name=actOut_func,
-                                                    sWavelet=R['sfourier'])
-                UNN_right = DNN_base.DNN_WaveletBase(XY_right, W2NN, B2NN, hidden_layers, freqs,
-                                                     activate_name=act_func, activateOut_name=actOut_func,
-                                                     sWavelet=R['sfourier'])
-                UNN_bottom = DNN_base.DNN_WaveletBase(XY_bottom, W2NN, B2NN, hidden_layers, freqs,
-                                                      activate_name=act_func, activateOut_name=actOut_func,
-                                                      sWavelet=R['sfourier'])
-                UNN_top = DNN_base.DNN_WaveletBase(XY_top, W2NN, B2NN, hidden_layers, freqs,
-                                                   activate_name=act_func, activateOut_name=actOut_func,
-                                                   sWavelet=R['sfourier'])
+                UNN = DNN_base.DNN_RBFBase(XY_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                           activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_left = DNN_base.DNN_RBFBase(XY_left, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                                activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_right = DNN_base.DNN_RBFBase(XY_right, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                                 activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_bottom = DNN_base.DNN_RBFBase(XY_bottom, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                                  activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_top = DNN_base.DNN_RBFBase(XY_top, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
+                                               activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
 
             X_it = tf.reshape(XY_it[:, 0], shape=[-1, 1])
             Y_it = tf.reshape(XY_it[:, 1], shape=[-1, 1])
@@ -685,8 +684,8 @@ if __name__ == "__main__":
 
     # 边界的惩罚处理方式,以及边界的惩罚因子
     R['activate_penalty2bd_increase'] = 1
-    # R['init_boundary_penalty'] = 1000                     # Regularization parameter for boundary conditions
-    R['init_boundary_penalty'] = 100                     # Regularization parameter for boundary conditions
+    # R['init_boundary_penalty'] = 1000                   # Regularization parameter for boundary conditions
+    R['init_boundary_penalty'] = 100                      # Regularization parameter for boundary conditions
 
     # 网络的频率范围设置
     R['freq'] = np.arange(1, 121)
@@ -697,13 +696,14 @@ if __name__ == "__main__":
     # R['model2NN'] = 'DNN'
     # R['model2NN'] = 'DNN_scale'
     # R['model2NN'] = 'DNN_adapt_scale'
-    R['model2NN'] = 'DNN_FourierBase'
-    # R['model2NN'] = 'DNN_Sin+Cos_Base'
-    # R['model2NN'] = 'DNN_WaveletBase'
+    # R['model2NN'] = 'DNN_FourierBase'
+    R['model2NN'] = 'DNN_WaveletBase'
 
     # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
     if R['model2NN'] == 'DNN_FourierBase':
         R['hidden_layers'] = (125, 200, 200, 100, 100, 80)  # 1*125+250*200+200*200+200*100+100*100+100*50+50*1=128205
+    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        R['hidden_layers'] = (2000, 50, 40, 40)  # 1*125+250*200+200*200+200*100+100*100+100*50+50*1=128205
     else:
         # R['hidden_layers'] = (100, 80, 80, 60, 40, 40)
         # R['hidden_layers'] = (200, 100, 80, 50, 30)
@@ -714,18 +714,18 @@ if __name__ == "__main__":
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['name2act_in'] = 'relu'
     # R['name2act_in'] = 's2relu'
-    # R['name2act_in'] = 'tanh'
-    R['name2act_in'] = 'sinAddcos'
+    R['name2act_in'] = 'tanh'
+    # R['name2act_in'] = 'sinAddcos'
     # R['name2act_in'] = 'gelu'
 
     # R['name2act_hidden'] = 'relu'
-    # R['name2act_hidden'] = 'tanh'
+    R['name2act_hidden'] = 'tanh'
     # R['name2act_hidden']' = leaky_relu'
     # R['name2act_hidden'] = 'srelu'
     # R['name2act_hidden'] = 's2relu'
     # R['name2act_hidden'] = 'scsrelu'
     # R['name2act_hidden'] = 'sin'
-    R['name2act_hidden'] = 'sinAddcos'
+    # R['name2act_hidden'] = 'sinAddcos'
     # R['name2act_hidden'] = 'elu'
     # R['name2act_hidden'] = 'gelu'
     # R['name2act_hidden'] = 'phi'
@@ -744,21 +744,18 @@ if __name__ == "__main__":
     elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'sin':
         # R['sfourier'] = 0.5
         R['sfourier'] = 1.0
-    elif R['model2NN'] == 'DNN_FourierBase' and R['name2act_hidden'] == 'scsrelu':
-        R['sfourier'] = 0.5
-        # R['sfourier'] = 1.0
     else:
         R['sfourier'] = 1.0
         # R['sfourier'] = 5.0
         # R['sfourier'] = 0.75
 
-    if R['model2NN'] == 'DNN_WaveletBase':
-        # R['freq'] = np.concatenate(([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 9)), axis=0)
+    if R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
         # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
         # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
-        # R['freq'] = np.concatenate(([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 30-9)), axis=0)
-        R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.arange(1, 100)
+        R['freq'] = np.concatenate(([0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 30-9)), axis=0)
+        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
+        R['freq'] = np.arange(1, 100)
 
     solve_Multiscale_PDE(R)
 
