@@ -1591,16 +1591,20 @@ def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_n
         square_diff_X2 = tf.square(diff_X2)
         square_diff_X3 = tf.square(diff_X3)
         square_diff_X4 = tf.square(diff_X4)
-        norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3 + square_diff_X4
+        norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3 + square_diff_X4   # (?, N)
     weight_norm2diff_X = tf.multiply(norm2diffx, W2RBF)
 
     if len(scale_frag) == 1:
-        H = tf.exp(-0.5 * weight_norm2diff_X)
-        # H = tf.exp(-0.5 *weight_norm2diff_X) * sfactor*(tf.cos(1.75 * norm2diffx) + tf.sin(1.75 * norm2diffx))
+        # H = tf.exp(-0.5 * weight_norm2diff_X)
+        H = tf.exp(-0.5 * weight_norm2diff_X) * sfactor * tf.cos(1.75 * norm2diffx)
+        # H = tf.exp(-0.5 * weight_norm2diff_X) * sfactor * tf.cos(1.75 * weight_norm2diff_X)
+        # H = tf.exp(-0.5 *weight_norm2diff_X) * sfactor*(tf.cos(1.75 * weight_norm2diff_X) + tf.sin(1.75 * weight_norm2diff_X))
     else:
-        H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe)
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe)
         # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * norm2diffx)
-        # H = tf.exp(-0.5 * tf.square(H) * mixcoe) * sfactor * (tf.cos(1.75 * H) + tf.sin(1.75 * H))
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * norm2diffx * mixcoe)
+        H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * weight_norm2diff_X * mixcoe)
+        # H = tf.exp(-0.5 *weight_norm2diff_X * mixcoe) * sfactor*(tf.cos(1.75 * weight_norm2diff_X * mixcoe) + tf.sin(1.75 * weight_norm2diff_X * mixcoe))
 
     hiddens_record = hiddens[0]
     for k in range(layers-2):
