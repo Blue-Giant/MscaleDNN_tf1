@@ -492,27 +492,35 @@ def Xavier_init_NN_Fourier(in_size, out_size, hidden_layers, Flag='flag', varcoe
 
 
 def Xavier_init_NN_RBF(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5, opt2init_B2RBF='uniform_random',
-                       train_B2RBF=True, left_value=0.0, right_value=1.0, shuffle_B2RBF=True):
+                       opt2init_W2RBF='uniform_random', train_W2RBF=True, train_B2RBF=True, left_value=0.0,
+                       right_value=1.0, shuffle_W2RBF=True, shuffle_B2RBF=True):
     with tf.compat.v1.variable_scope('WB_scope', reuse=tf.compat.v1.AUTO_REUSE):
         n_hiddens = len(hidden_layers)
         Weights = []   # 权重列表，用于存储隐藏层的权重
         Biases = []    # 偏置列表，用于存储隐藏层的偏置
         # 隐藏层：第一层的权重和偏置，对输入数据做变换
         stddev_WB = (2.0 / (in_size + hidden_layers[0])) ** varcoe
-        W2RBF = tf.compat.v1.get_variable(name='W2RBF' + str(Flag), shape=(1, hidden_layers[0]),
-                                          initializer=tf.random_normal_initializer(stddev=stddev_WB),
-                                          dtype=tf.float32)
+        if opt2init_W2RBF == 'uniform_random':
+            W2RBF = tf.compat.v1.get_variable(name='W2RBF' + str(Flag),
+                                              initializer=tf.random.uniform([1, hidden_layers[0]]),
+                                              dtype=tf.float32, trainable=train_W2RBF)
+            if shuffle_W2RBF:
+                W2RBF = tf.random_shuffle(W2RBF)    # 如果对 W2RBF求导，random_shuffle没有梯度定义
+        else:
+            W2RBF = tf.compat.v1.get_variable(name='W2RBF' + str(Flag), shape=(1, hidden_layers[0]),
+                                              initializer=tf.random_normal_initializer(stddev=stddev_WB),
+                                              dtype=tf.float32, trainable=train_W2RBF)
         if opt2init_B2RBF == 'uniform_random':
-            B_RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag),
+            B2RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag),
                                               initializer=tf.random.uniform([in_size, hidden_layers[0]],
                                                                             minval=left_value, maxval=right_value),
                                               dtype=tf.float32, trainable=train_B2RBF)
+            if shuffle_B2RBF:
+                B2RBF = tf.random_shuffle(B2RBF)
         else:
-            B_RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag), shape=(in_size, hidden_layers[0]),
+            B2RBF = tf.compat.v1.get_variable(name='B2RBF' + str(Flag), shape=(in_size, hidden_layers[0]),
                                               initializer=tf.random_normal_initializer(stddev=stddev_WB),
                                               dtype=tf.float32, trainable=train_B2RBF)
-        if shuffle_B2RBF:
-            B2RBF = tf.random_shuffle(B_RBF)
 
         Weights.append(W2RBF)
         Biases.append(B2RBF)
@@ -1388,7 +1396,7 @@ def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activat
     if str.lower(activate_name) == 'tanh':
         sfactor = sFourier
     elif str.lower(activate_name) == 's2relu':
-        sfactor = 0.5
+        sfactor = sFourier
     elif str.lower(activate_name) == 'sinaddcos':
         sfactor = sFourier
     else:
@@ -1534,7 +1542,7 @@ def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_n
     if str.lower(activate_name) == 'tanh':
         sfactor = sRBF
     elif str.lower(activate_name) == 's2relu':
-        sfactor = 0.5
+        sfactor = sRBF
     elif str.lower(activate_name) == 'sinaddcos':
         sfactor = sRBF
     else:
@@ -1595,16 +1603,24 @@ def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_n
     weight_norm2diff_X = tf.multiply(norm2diffx, W2RBF)
 
     if len(scale_frag) == 1:
-        # H = tf.exp(-0.5 * weight_norm2diff_X)
-        H = tf.exp(-0.5 * weight_norm2diff_X) * sfactor * tf.cos(1.75 * norm2diffx)
+        # H = tf.sin(weight_norm2diff_X)
+        H = tf.exp(-0.5 * weight_norm2diff_X)
+        # H = tf.exp(-0.5 * weight_norm2diff_X) * sfactor * tf.cos(1.75 * norm2diffx)
         # H = tf.exp(-0.5 * weight_norm2diff_X) * sfactor * tf.cos(1.75 * weight_norm2diff_X)
         # H = tf.exp(-0.5 *weight_norm2diff_X) * sfactor*(tf.cos(1.75 * weight_norm2diff_X) + tf.sin(1.75 * weight_norm2diff_X))
     else:
+        # H = tf.sin(weight_norm2diff_X * mixcoe)
         # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe)
         # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * norm2diffx)
+        H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.sin(norm2diffx * mixcoe)
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.sin(weight_norm2diff_X * mixcoe)
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.sin(np.pi * norm2diffx * mixcoe)  # work 不好
         # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * norm2diffx * mixcoe)
-        H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * weight_norm2diff_X * mixcoe)
-        # H = tf.exp(-0.5 *weight_norm2diff_X * mixcoe) * sfactor*(tf.cos(1.75 * weight_norm2diff_X * mixcoe) + tf.sin(1.75 * weight_norm2diff_X * mixcoe))
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * 0.5 * (tf.cos(norm2diffx * mixcoe) + tf.sin(norm2diffx * mixcoe))
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * 0.5*(tf.cos(1.75 * norm2diffx * mixcoe) + tf.sin(1.75 * norm2diffx * mixcoe))
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * weight_norm2diff_X)
+        # H = tf.exp(-0.5 * weight_norm2diff_X * mixcoe) * sfactor * tf.cos(1.75 * weight_norm2diff_X * mixcoe)
+        # H = tf.exp(-0.5 *weight_norm2diff_X * mixcoe) * sfactor*0.5*(tf.cos(1.75 * weight_norm2diff_X * mixcoe) + tf.sin(1.75 * weight_norm2diff_X * mixcoe))
 
     hiddens_record = hiddens[0]
     for k in range(layers-2):

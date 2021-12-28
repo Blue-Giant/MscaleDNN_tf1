@@ -104,6 +104,10 @@ def solve_Multiscale_PDE(R):
     flag1 = 'WB'
     if R['model2NN'] == 'DNN_FourierBase':
         Weights, Biases = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
+    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        Weights, Biases = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True,
+                                                      train_B2RBF=True, left_value=region_l, right_value=region_r,
+                                                      shuffle_W2RBF=False, shuffle_B2RBF=False)
     else:
         Weights, Biases = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -134,17 +138,6 @@ def solve_Multiscale_PDE(R):
                 UNN_right = DNN_base.DNN_scale(X_right, Weights, Biases, hidden_layers, freqs,
                                                activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
                                                activateOut_name=R['name2act_out'])
-            elif R['model2NN'] == 'DNN_adapt_scale':
-                freqs = R['freq']
-                UNN = DNN_base.DNN_adapt_scale(X_it, Weights, Biases, hidden_layers, freqs,
-                                               activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
-                                               activateOut_name=R['name2act_out'])
-                UNN_left = DNN_base.DNN_adapt_scale(X_left, Weights, Biases, hidden_layers, freqs,
-                                                    activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
-                                                    activateOut_name=R['name2act_out'])
-                UNN_right = DNN_base.DNN_adapt_scale(X_right, Weights, Biases, hidden_layers, freqs,
-                                                     activateIn_name=R['name2act_in'], activate_name=R['name2act_hidden'],
-                                                     activateOut_name=R['name2act_out'])
             elif R['model2NN'] == 'DNN_FourierBase':
                 freqs = R['freq']
                 UNN = DNN_base.DNN_FourierBase(X_it, Weights, Biases, hidden_layers, freqs,
@@ -156,6 +149,14 @@ def solve_Multiscale_PDE(R):
                 UNN_right = DNN_base.DNN_FourierBase(X_right, Weights, Biases, hidden_layers, freqs,
                                                      activate_name=act_func, activateOut_name=R['name2act_out'],
                                                      sFourier=R['sfourier'])
+            elif R['model2NN'] == 'DNN_WaveletBase':
+                freqs = R['freq']
+                UNN = DNN_base.DNN_RBFBase(X_it, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
+                                           activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_left = DNN_base.DNN_RBFBase(X_left, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
+                                                activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
+                UNN_right = DNN_base.DNN_RBFBase(X_right, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
+                                                 activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
 
             # 变分形式的loss of interior，训练得到的 UNN 是 * 行 1 列
             if R['loss_type'] == 'variational_loss':
@@ -512,10 +513,9 @@ if __name__ == "__main__":
 
     # &&&&&&&&&&&&&&&&&&& 使用的网络模型 &&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['model2NN'] = 'DNN'
-    R['model2NN'] = 'DNN_scale'
-    # R['model2NN'] = 'DNN_adapt_scale'
+    # R['model2NN'] = 'DNN_scale'
     # R['model2NN'] = 'DNN_FourierBase'
-    # R['model2NN'] = 'DNN_WaveletBase'
+    R['model2NN'] = 'DNN_WaveletBase'
 
     # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
     if R['model2NN'] == 'DNN_FourierBase':
@@ -539,6 +539,8 @@ if __name__ == "__main__":
 
         if R['equa_name'] == '3scale2':
             R['hidden_layers'] = (175, 300, 200, 200, 100)  # 172775
+    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        R['hidden_layers'] = (1000, 60, 50, 50)  # 1*1000+1000*60+60*50+50*50+50*1=66550
     else:
         if R['order2pLaplace_operator'] == 2:
             if R['epsilon'] == 0.1:
@@ -563,17 +565,17 @@ if __name__ == "__main__":
 
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['name2act_in'] = 'tanh'
-    # R['name2act_in'] = 's2relu'
+    R['name2act_in'] = 's2relu'
     # R['name2act_in'] = 'gelu'
     # R['name2act_in'] = 'sin'
-    R['name2act_in'] = 'sinADDcos'
+    # R['name2act_in'] = 'sinADDcos'
 
     # R['name2act_hidden'] = 'relu'
     # R['name2act_hidden'] = 'tanh'
     # R['name2act_hidden'] = 'srelu'
-    # R['name2act_hidden'] = 's2relu'
+    R['name2act_hidden'] = 's2relu'
     # R['name2act_hidden'] = 'sin'
-    R['name2act_hidden'] = 'sinADDcos'
+    # R['name2act_hidden'] = 'sinADDcos'
     # R['name2act_hidden'] = 'elu'
     # R['name2act_hidden'] = 'gelu'
     # R['name2act_hidden'] = 'phi'
@@ -592,6 +594,18 @@ if __name__ == "__main__":
         R['sfourier'] = 0.5
     else:
         R['sfourier'] = 1.0
+
+    if R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
+        # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
+        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
+        # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
+        a = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09])  # 18
+        c = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])   # 9
+        b = np.arange(1, 60)   # 49
+        # R['freq'] = np.concatenate((a, c, b), axis=0)
+        R['freq'] = np.concatenate((np.flipud(b), np.flipud(c), np.flipud(a)), axis=0)
+        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
+        # R['freq'] = np.arange(1, 100)
 
     solve_Multiscale_PDE(R)
 

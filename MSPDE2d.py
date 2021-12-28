@@ -112,8 +112,9 @@ def solve_Multiscale_PDE(R):
     if R['model2NN'] == 'DNN_FourierBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
     elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_B2RBF=False,
-                                                 left_value=region_lb, right_value=region_rt)
+        W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True,
+                                                 train_B2RBF=True, left_value=region_lb, right_value=region_rt,
+                                                 shuffle_W2RBF=False, shuffle_B2RBF=False)
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -703,7 +704,8 @@ if __name__ == "__main__":
     if R['model2NN'] == 'DNN_FourierBase':
         R['hidden_layers'] = (125, 200, 200, 100, 100, 80)  # 1*125+250*200+200*200+200*100+100*100+100*50+50*1=128205
     elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        R['hidden_layers'] = (2000, 50, 40, 40)  # 1*125+250*200+200*200+200*100+100*100+100*50+50*1=128205
+        # R['hidden_layers'] = (2000, 60, 40, 40)  # 1*2000+2000*50+50*40+40*40+40*1=105640
+        R['hidden_layers'] = (2000, 60, 50, 50)  # 1*2000+2000*50+50*40+40*40+40*1=125550
     else:
         # R['hidden_layers'] = (100, 80, 80, 60, 40, 40)
         # R['hidden_layers'] = (200, 100, 80, 50, 30)
@@ -713,17 +715,17 @@ if __name__ == "__main__":
 
     # &&&&&&&&&&&&&&&&&&& 激活函数的选择 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&
     # R['name2act_in'] = 'relu'
-    # R['name2act_in'] = 's2relu'
-    R['name2act_in'] = 'tanh'
+    R['name2act_in'] = 's2relu'
+    # R['name2act_in'] = 'sin'
+    # R['name2act_in'] = 'tanh'
     # R['name2act_in'] = 'sinAddcos'
     # R['name2act_in'] = 'gelu'
 
     # R['name2act_hidden'] = 'relu'
-    R['name2act_hidden'] = 'tanh'
+    # R['name2act_hidden'] = 'tanh'
     # R['name2act_hidden']' = leaky_relu'
     # R['name2act_hidden'] = 'srelu'
-    # R['name2act_hidden'] = 's2relu'
-    # R['name2act_hidden'] = 'scsrelu'
+    R['name2act_hidden'] = 's2relu'
     # R['name2act_hidden'] = 'sin'
     # R['name2act_hidden'] = 'sinAddcos'
     # R['name2act_hidden'] = 'elu'
@@ -745,6 +747,7 @@ if __name__ == "__main__":
         # R['sfourier'] = 0.5
         R['sfourier'] = 1.0
     else:
+        # R['sfourier'] = 0.5
         R['sfourier'] = 1.0
         # R['sfourier'] = 5.0
         # R['sfourier'] = 0.75
@@ -753,9 +756,17 @@ if __name__ == "__main__":
         # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
         # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
         # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
-        R['freq'] = np.concatenate(([0.01, 0.02, 0.03, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 30-9)), axis=0)
+        a = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09])  # 18
+        c = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])   # 9
+        b = np.arange(1, 60)   # 49
+        # R['freq'] = np.concatenate((a, c, b), axis=0)
+        R['freq'] = np.concatenate((np.flipud(b), np.flipud(c), np.flipud(a)), axis=0)
         # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        R['freq'] = np.arange(1, 100)
+        # R['freq'] = np.arange(1, 100)
 
     solve_Multiscale_PDE(R)
+
+
+#     B2RBF 变成可训练的，效果会变得比较好，初始化选为 uniform_random
+#     W2RBF 变成可训练的，效果也会好, 初始化选为 uniform_random
 
