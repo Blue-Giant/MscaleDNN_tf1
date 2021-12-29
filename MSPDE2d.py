@@ -114,7 +114,7 @@ def solve_Multiscale_PDE(R):
     elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True,
                                                  train_B2RBF=True, left_value=region_lb, right_value=region_rt,
-                                                 shuffle_W2RBF=False, shuffle_B2RBF=False)
+                                                 shuffle_W2RBF=False, shuffle_B2RBF=False, value_max2weight=0.75)  # 0.75最好
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -705,7 +705,7 @@ if __name__ == "__main__":
         R['hidden_layers'] = (125, 200, 200, 100, 100, 80)  # 1*125+250*200+200*200+200*100+100*100+100*50+50*1=128205
     elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
         # R['hidden_layers'] = (2000, 60, 40, 40)  # 1*2000+2000*50+50*40+40*40+40*1=105640
-        R['hidden_layers'] = (2000, 60, 50, 50)  # 1*2000+2000*50+50*40+40*40+40*1=125550
+        R['hidden_layers'] = (2000, 60, 50, 50)  # 2*2000+2000*50+50*40+40*40+40*1=125550
     else:
         # R['hidden_layers'] = (100, 80, 80, 60, 40, 40)
         # R['hidden_layers'] = (200, 100, 80, 50, 30)
@@ -768,5 +768,5 @@ if __name__ == "__main__":
 
 
 #     B2RBF 变成可训练的，效果会变得比较好，初始化选为 uniform_random
-#     W2RBF 变成可训练的，效果也会好, 初始化选为 uniform_random
+#     W2RBF 变成可训练的，效果也会好, 初始化选为 uniform_random, 选择 normal 初始化，效果不好
 

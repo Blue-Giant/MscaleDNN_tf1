@@ -105,9 +105,9 @@ def solve_Multiscale_PDE(R):
     if R['model2NN'] == 'DNN_FourierBase':
         Weights, Biases = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
     elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        Weights, Biases = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True,
-                                                      train_B2RBF=True, left_value=region_l, right_value=region_r,
-                                                      shuffle_W2RBF=False, shuffle_B2RBF=False)
+        Weights, Biases = DNN_base.Xavier_init_NN_RBF(
+            input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True, train_B2RBF=True, left_value=region_l,
+            right_value=region_r, shuffle_W2RBF=False, shuffle_B2RBF=False, value_max2weight=0.75)
     else:
         Weights, Biases = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 

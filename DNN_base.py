@@ -493,7 +493,7 @@ def Xavier_init_NN_Fourier(in_size, out_size, hidden_layers, Flag='flag', varcoe
 
 def Xavier_init_NN_RBF(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5, opt2init_B2RBF='uniform_random',
                        opt2init_W2RBF='uniform_random', train_W2RBF=True, train_B2RBF=True, left_value=0.0,
-                       right_value=1.0, shuffle_W2RBF=True, shuffle_B2RBF=True):
+                       right_value=1.0, shuffle_W2RBF=True, shuffle_B2RBF=True, value_max2weight=1.0):
     with tf.compat.v1.variable_scope('WB_scope', reuse=tf.compat.v1.AUTO_REUSE):
         n_hiddens = len(hidden_layers)
         Weights = []   # 权重列表，用于存储隐藏层的权重
@@ -502,7 +502,8 @@ def Xavier_init_NN_RBF(in_size, out_size, hidden_layers, Flag='flag', varcoe=0.5
         stddev_WB = (2.0 / (in_size + hidden_layers[0])) ** varcoe
         if opt2init_W2RBF == 'uniform_random':
             W2RBF = tf.compat.v1.get_variable(name='W2RBF' + str(Flag),
-                                              initializer=tf.random.uniform([1, hidden_layers[0]]),
+                                              initializer=tf.random.uniform([1, hidden_layers[0]],
+                                                                            maxval=value_max2weight),
                                               dtype=tf.float32, trainable=train_W2RBF)
             if shuffle_W2RBF:
                 W2RBF = tf.random_shuffle(W2RBF)    # 如果对 W2RBF求导，random_shuffle没有梯度定义
@@ -1423,6 +1424,7 @@ def DNN_FourierBase(variable_input, Weights, Biases, hiddens, freq_frag, activat
     return output
 
 
+# DNN model with radius basis function
 def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_name='tanh', activateOut_name='linear',
                 repeat_Highfreq=True, sRBF=0.5, in_dim=2):
     """
