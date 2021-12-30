@@ -527,14 +527,14 @@ if __name__ == "__main__":
     # R['model2NN'] = 'DNN'
     # R['model2NN'] = 'DNN_scale'
     # R['model2NN'] = 'DNN_adapt_scale'
-    R['model2NN'] = 'DNN_FourierBase'
-    # R['model2NN'] = 'DNN_WaveletBase'
+    # R['model2NN'] = 'DNN_FourierBase'
+    R['model2NN'] = 'DNN_WaveletBase'
 
     # &&&&&&&&&&&&&&&&&&&&&& 隐藏层的层数和每层神经元数目 &&&&&&&&&&&&&&&&&&&&&&&&&&&&
     if R['model2NN'] == 'DNN_FourierBase':
         R['hidden_layers'] = (250, 400, 400, 200, 200, 150)  # 250+500*400+400*400+400*200+200*200+200*150+150 = 510400
     elif R['model2NN'] == 'DNN_WaveletBase':
-        R['hidden_layers'] = (3000, 150, 100, 80, 80)  # 3*3000+ 3000*150+150*100+100*80+80*80+80 = 510400
+        R['hidden_layers'] = (3000, 150, 100, 100, 80)  # 3*3000+ 3000*150+150*100+100*100+100*80+80 = 492080
     else:
         # R['hidden_layers'] = (100, 10, 8, 6, 4)  # 测试
         # R['hidden_layers'] = (100, 80, 60, 60, 40, 40, 20)
