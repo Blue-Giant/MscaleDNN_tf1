@@ -298,7 +298,8 @@ def phi(x):
 
 def gelu(x):
     temp2x = np.sqrt(2 / np.pi) * (x + 0.044715 * x * x * x)
-    out = 0.5*+ 0.5*x*tf.tanh(temp2x)
+    # out = 0.5*+ 0.5*x*tf.tanh(temp2x)
+    out = 0.25 * x * tf.tanh(temp2x)
     return out
 
 
@@ -1514,12 +1515,24 @@ def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_n
         X_vec1 = np.array([[1.0], [0.0], [0.0], [0.0]], dtype=np.float32)
         X_vec2 = np.array([[0.0], [1.0], [0.0], [0.0]], dtype=np.float32)
         X_vec3 = np.array([[0.0], [0.0], [1.0], [0.0]], dtype=np.float32)
-        X_vec4 = np.array([[0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec4 = np.array([[0.0], [0.0], [0.0], [1.0]], dtype=np.float32)
 
         B_vec1 = np.array([[1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
         B_vec2 = np.array([[0.0, 1.0, 0.0, 0.0]], dtype=np.float32)
         B_vec3 = np.array([[0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
         B_vec4 = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
+    elif 5 == in_dim:
+        X_vec1 = np.array([[1.0], [0.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec2 = np.array([[0.0], [1.0], [0.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec3 = np.array([[0.0], [0.0], [1.0], [0.0], [0.0]], dtype=np.float32)
+        X_vec4 = np.array([[0.0], [0.0], [0.0], [1.0], [0.0]], dtype=np.float32)
+        X_vec5 = np.array([[0.0], [0.0], [0.0], [0.0], [1.0]], dtype=np.float32)
+
+        B_vec1 = np.array([[1.0, 0.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec2 = np.array([[0.0, 1.0, 0.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec3 = np.array([[0.0, 0.0, 1.0, 0.0, 0.0]], dtype=np.float32)
+        B_vec4 = np.array([[0.0, 0.0, 0.0, 1.0, 0.0]], dtype=np.float32)
+        B_vec5 = np.array([[0.0, 0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
 
     layers = len(hiddens) + 1                   # 得到输入到输出的层数，即隐藏层层数
     H = variable_input                          # 代表输入数据，即输入层
@@ -1602,6 +1615,30 @@ def DNN_RBFBase(variable_input, Weights, Biases, hiddens, scale_frag, activate_n
         square_diff_X3 = tf.square(diff_X3)
         square_diff_X4 = tf.square(diff_X4)
         norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3 + square_diff_X4   # (?, N)
+    elif 5 == in_dim:
+        X1 = tf.matmul(H, X_vec1)
+        X2 = tf.matmul(H, X_vec2)
+        X3 = tf.matmul(H, X_vec3)
+        X4 = tf.matmul(H, X_vec4)
+        X5 = tf.matmul(H, X_vec5)
+
+        B1 = tf.matmul(B_vec1, B2RBF)
+        B2 = tf.matmul(B_vec2, B2RBF)
+        B3 = tf.matmul(B_vec3, B2RBF)
+        B4 = tf.matmul(B_vec4, B2RBF)
+        B5 = tf.matmul(B_vec5, B2RBF)
+
+        diff_X1 = X1 - B1
+        diff_X2 = X2 - B2
+        diff_X3 = X3 - B3
+        diff_X4 = X4 - B4
+        diff_X5 = X5 - B5
+        square_diff_X1 = tf.square(diff_X1)
+        square_diff_X2 = tf.square(diff_X2)
+        square_diff_X3 = tf.square(diff_X3)
+        square_diff_X4 = tf.square(diff_X4)
+        square_diff_X5 = tf.square(diff_X5)
+        norm2diffx = square_diff_X1 + square_diff_X2 + square_diff_X3 + square_diff_X4 + square_diff_X5   # (?, N)
     weight_norm2diff_X = tf.multiply(norm2diffx, W2RBF)
 
     if len(scale_frag) == 1:
