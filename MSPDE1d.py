@@ -104,10 +104,6 @@ def solve_Multiscale_PDE(R):
     flag1 = 'WB'
     if R['model2NN'] == 'DNN_FourierBase':
         Weights, Biases = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
-    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        Weights, Biases = DNN_base.Xavier_init_NN_RBF(
-            input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True, train_B2RBF=True, left_value=region_l,
-            right_value=region_r, shuffle_W2RBF=False, shuffle_B2RBF=False, value_max2weight=0.75)
     else:
         Weights, Biases = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -149,14 +145,6 @@ def solve_Multiscale_PDE(R):
                 UNN_right = DNN_base.DNN_FourierBase(X_right, Weights, Biases, hidden_layers, freqs,
                                                      activate_name=act_func, activateOut_name=R['name2act_out'],
                                                      sFourier=R['sfourier'])
-            elif R['model2NN'] == 'DNN_WaveletBase':
-                freqs = R['freq']
-                UNN = DNN_base.DNN_RBFBase(X_it, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
-                                           activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_left = DNN_base.DNN_RBFBase(X_left, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
-                                                activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_right = DNN_base.DNN_RBFBase(X_right, Weights, Biases, hidden_layers, freqs, activate_name=act_func,
-                                                 activateOut_name=R['name2act_out'], sRBF=R['sfourier'], in_dim=input_dim)
 
             # 变分形式的loss of interior，训练得到的 UNN 是 * 行 1 列
             if R['loss_type'] == 'variational_loss':
@@ -594,18 +582,6 @@ if __name__ == "__main__":
         R['sfourier'] = 0.5
     else:
         R['sfourier'] = 1.0
-
-    if R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
-        a = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09])  # 18
-        c = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])   # 9
-        b = np.arange(1, 60)   # 49
-        # R['freq'] = np.concatenate((a, c, b), axis=0)
-        R['freq'] = np.concatenate((np.flipud(b), np.flipud(c), np.flipud(a)), axis=0)
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.arange(1, 100)
 
     solve_Multiscale_PDE(R)
 
