@@ -74,10 +74,6 @@ def solve_Multiscale_PDE(R):
     flag = 'WB2NN'
     if R['model2NN'] == 'DNN_FourierBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag)
-    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag, train_W2RBF=True,
-                                                 train_B2RBF=True, left_value=region_lb, right_value=region_rt,
-                                                 shuffle_W2RBF=False, shuffle_B2RBF=False, value_max2weight=0.75)  # 0.75最好
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag)
 
@@ -164,28 +160,6 @@ def solve_Multiscale_PDE(R):
                 UBehind_NN = DNN_base.DNN_FourierBase(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs,
                                                       activate_name=act_func, activateOut_name=actOut_func,
                                                       sFourier=R['sfourier'])
-            elif R['model2NN'] == 'DNN_WaveletBase':
-                freqs = R['freq']
-                UNN = DNN_base.DNN_RBFBase(XYZ_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                           activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
-                ULeft_NN = DNN_base.DNN_RBFBase(XYZ_left_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                activate_name=act_func, activateOut_name=actOut_func,
-                                                sRBF=R['sfourier'], in_dim=input_dim)
-                URight_NN = DNN_base.DNN_RBFBase(XYZ_right_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                 activate_name=act_func, activateOut_name=actOut_func,
-                                                 sRBF=R['sfourier'], in_dim=input_dim)
-                UBottom_NN = DNN_base.DNN_RBFBase(XYZ_bottom_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                  activate_name=act_func, activateOut_name=actOut_func,
-                                                  sRBF=R['sfourier'], in_dim=input_dim)
-                UTop_NN = DNN_base.DNN_RBFBase(XYZ_top_bd, W2NN, B2NN, hidden_layers, freqs,
-                                               activate_name=act_func, activateOut_name=actOut_func,
-                                               sRBF=R['sfourier'], in_dim=input_dim)
-                UFront_NN = DNN_base.DNN_RBFBase(XYZ_front_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                 activate_name=act_func, activateOut_name=actOut_func,
-                                                 sRBF=R['sfourier'], in_dim=input_dim)
-                UBehind_NN = DNN_base.DNN_RBFBase(XYZ_behind_bd, W2NN, B2NN, hidden_layers, freqs,
-                                                  activate_name=act_func, activateOut_name=actOut_func,
-                                                  sRBF=R['sfourier'], in_dim=input_dim)
 
             X_it = tf.reshape(XYZ_it[:, 0], shape=[-1, 1])
             Y_it = tf.reshape(XYZ_it[:, 1], shape=[-1, 1])
@@ -572,20 +546,6 @@ if __name__ == "__main__":
         R['sfourier'] = 0.5
     else:
         R['sfourier'] = 1.0
-
-    if R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
-        a = np.array(
-            [0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07,
-             0.08, 0.09])  # 18
-        c = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])  # 9
-        b = np.arange(1, 60)  # 49
-        # R['freq'] = np.concatenate((a, c, b), axis=0)
-        R['freq'] = np.concatenate((np.flipud(b), np.flipud(c), np.flipud(a)), axis=0)
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.arange(1, 100)
 
     solve_Multiscale_PDE(R)
 
