@@ -111,10 +111,6 @@ def solve_Multiscale_PDE(R):
     flag1 = 'WB'
     if R['model2NN'] == 'DNN_FourierBase':
         W2NN, B2NN = DNN_base.Xavier_init_NN_Fourier(input_dim, out_dim, hidden_layers, flag1)
-    elif R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        W2NN, B2NN = DNN_base.Xavier_init_NN_RBF(input_dim, out_dim, hidden_layers, flag1, train_W2RBF=True,
-                                                 train_B2RBF=True, left_value=region_lb, right_value=region_rt,
-                                                 shuffle_W2RBF=False, shuffle_B2RBF=False, value_max2weight=0.75)  # 0.75最好
     else:
         W2NN, B2NN = DNN_base.Xavier_init_NN(input_dim, out_dim, hidden_layers, flag1)
 
@@ -177,18 +173,6 @@ def solve_Multiscale_PDE(R):
                                                       activateOut_name=actOut_func, sFourier=R['sfourier'])
                 UNN_top = DNN_base.DNN_FourierBase(XY_top, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
                                                    activateOut_name=actOut_func, sFourier=R['sfourier'])
-            elif R['model2NN'] == 'DNN_WaveletBase':
-                freqs = R['freq']
-                UNN = DNN_base.DNN_RBFBase(XY_it, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                           activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_left = DNN_base.DNN_RBFBase(XY_left, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                                activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_right = DNN_base.DNN_RBFBase(XY_right, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                                 activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_bottom = DNN_base.DNN_RBFBase(XY_bottom, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                                  activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
-                UNN_top = DNN_base.DNN_RBFBase(XY_top, W2NN, B2NN, hidden_layers, freqs, activate_name=act_func,
-                                               activateOut_name=actOut_func, sRBF=R['sfourier'], in_dim=input_dim)
 
             X_it = tf.reshape(XY_it[:, 0], shape=[-1, 1])
             Y_it = tf.reshape(XY_it[:, 1], shape=[-1, 1])
@@ -752,21 +736,5 @@ if __name__ == "__main__":
         # R['sfourier'] = 5.0
         # R['sfourier'] = 0.75
 
-    if R['model2NN'] == 'DNN_WaveletBase' or R['model2NN'] == 'DNN_RBFBase':
-        # R['freq'] = np.array([1.0, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2, 0.1, 0.09, 0.08, 0.07, 0.06, 0.05, 0.04, 0.03, 0.02, 0.01])
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.concatenate(([0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 5)), axis=0)
-        a = np.array([0.001, 0.002, 0.003, 0.004, 0.005, 0.006, 0.007, 0.008, 0.009, 0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09])  # 18
-        c = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])   # 9
-        b = np.arange(1, 60)   # 49
-        # R['freq'] = np.concatenate((a, c, b), axis=0)
-        R['freq'] = np.concatenate((np.flipud(b), np.flipud(c), np.flipud(a)), axis=0)
-        # R['freq'] = np.concatenate(([0.25, 0.5, 0.6, 0.7, 0.8, 0.9], np.arange(1, 100 - 6)), axis=0)
-        # R['freq'] = np.arange(1, 100)
-
     solve_Multiscale_PDE(R)
-
-
-#     B2RBF 变成可训练的，效果会变得比较好，初始化选为 uniform_random
-#     W2RBF 变成可训练的，效果也会好, 初始化选为 uniform_random, 选择 normal 初始化，效果不好
 
