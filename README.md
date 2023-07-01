@@ -3,7 +3,7 @@ The codes are implemented in tensorflow--1.14 or 1.15 under the interpreter pyth
 
 Based on the class of Python, we have reconstructed the all codes for MscaleDNN architecture and submitted them in url https://github.com/Blue-Giant/MscaleDNN_tf1Class
 
- By means of the package of Pytorch, the corresponding codes of MscaleDNN can be found in url  by means of the package of Pytorch
+ By means of the package of Pytorch, the corresponding codes of MscaleDNN can be found in url https://github.com/Blue-Giant/MscaleDNN_torch
 
 It is need to point that the performance of class-based MscaleDNN is inferior to that of nonclass-based MscaleDNN. This is an open question.
 
